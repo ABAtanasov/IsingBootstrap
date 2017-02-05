@@ -3,8 +3,12 @@ from __future__ import absolute_import
 import os
 import errno
 import sys
+import argparse
 
-# Make a directory if it is not already made
+
+# --------------------------------------------------------
+# Makes a directory if it is not already made
+# --------------------------------------------------------
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -12,21 +16,27 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST and os.path.isdir(path): pass
         else: raise
 
-
+# --------------------------------------------------------
+# Given the job params and sdpb params this will set up everything
+# for the cluster to run cboot and sdpb
+# --------------------------------------------------------
 def submit_job(job_params, sdpb_params):
-    name   = job_params['name']
-    Lambda = sdpb_params['Lambda']
-    lmax   = sdpb_params['lmax']
-    nu_max = sdpb_params['nu_max']
-    precision = sdpb_params.get('precision', 400)
-    resolution = job_params['resolution']
-    distance   = job_params['distance']
-    mem        = job_params.get('mem',   8)
-    ndays      = job_params.get('ndays', 1)
-    ppn        = job_params['ppn']
+    name      = job_params['name']
+    Lambda    = sdpb_params['Lambda']
+    lmax      = sdpb_params['lmax']
+    nu_max    = sdpb_params['nu_max']
+    precision = sdpb_params['precision']
+    res       = job_params['res']
+    theta_res = job_params['theta_res']
+    dist      = job_params['dist']
+    mem       = job_params['mem']
+    ndays     = job_params['ndays']
+    threads   = job_params['threads']
 
-    cmd = "sage mixed_ising.py {} {} {} {} {} {} {} {}".format(\
-            name, Lambda, lmax, nu_max, precision, resolution, distance, ppn)
+    cmd = "sage theta_scan.py -n={} -L={} -l={} -nu={} -p={}".format(\
+            name, Lambda, lmax, nu_max, precision)\
+            + " --res={} --theta_res={} --dist={} --threads={}".format(\
+            res, theta_res, dist, threads)
 
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
@@ -42,18 +52,21 @@ def submit_job(job_params, sdpb_params):
              "scratch":scratchpath, "out":outpath}
 
     jobfile = write_jobfile(cmd, name, paths,\
-            mem = mem, ndays = ndays, ppn = ppn)
+            mem = mem, ndays = ndays, threads = threads)
 
     os.system("bsub < " + jobfile)
-    print "submitted job {}.".format(name)
 
+    print "submitted:\n  {}.".format(cmd)
+
+
+# --------------------------------------------------------
+# This writes the entire submit .sh file
+# and returns a link to that file inside bash_scripts/
+# --------------------------------------------------------
 def write_jobfile(cmd, jobname, paths,
-                  nodes=10, ppn=1, gpus=0, mem=8, ndays=1, queue='shared'):
+                  nodes=10, threads=1, gpus=0, mem=8, ndays=1, queue='shared'):
 
-    if ppn > 1:
-        threads = 'export OMP_NUM_THREADS={}\n'.format(ppn)
-    else:
-        threads = ''
+    threads = 'export OMP_NUM_THREADS={}\n'.format(threads)
 
     jobfile = os.path.join(paths["sh_scripts"], jobname + '.sh')
 
@@ -78,22 +91,58 @@ def write_jobfile(cmd, jobname, paths,
     return jobfile
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print "usage:"
-        print "python submit.py jobname Lambda lmax nu_max precision resolution distance mem ndays ppn"
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-n", "--name", type = str,\
+            help="name for the associated files")
+    parser.add_argument("-L","--Lambda", type = int, \
+           help="maximum derivative order")
+    parser.add_argument("-l", "--lmax", type = int, \
+            help="angular momentum cutoff")
+    parser.add_argument("-nu", "--nu_max", type = int, \
+            help="maximum number of poles")
+    parser.add_argument("-p", "--precision", type =int, \
+            help="working precision for calculations")
+    parser.add_argument("--res", type = int,\
+            help="number of sampling points along each axis")
+    parser.add_argument("--theta_res", type = int,\
+            help="number of sampling points over theta")
+    parser.add_argument("--dist", type = float,\
+            help="distance of \Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--mem", type = int,\
+            help="maximum memory allocated per node in cluster")
+    parser.add_argument("--ndays", type = int,\
+            help="number of days to run process on cluster")
+    parser.add_argument("--threads", type = int, \
+            help="maximum threads used by OpenMP")
+    args = parser.parse_args().__dict__
+
+    # If no flags are given, print the help menu instead:
+    if len(sys.argv) == 1:
+        os.system("python {} -h".format(os.path.abspath(__file__)))
         exit(0)
-    argv = sys.argv
 
-    job_params = {'name':sys.argv[1], 'resolution':sys.argv[6], 'distance':0.002, 'mem':10, 'ndays':1, 'ppn':1}
-    if len(sys.argv) > 7: job_params['distance'] = sys.argv[7]
-    if len(sys.argv) > 8: job_params['mem'] = sys.argv[8]
-    if len(sys.argv) > 9: job_params['ndays'] = sys.argv[9]
-    if len(sys.argv) > 10: job_params['ppn'] = sys.argv[10]
+    # Params fed into sdpb
+    sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400}
 
-    sdpb_params = {'Lambda':argv[2], 'lmax':argv[3], 'nu_max':argv[4], 'precision':argv[5]}
+    # Params fed into the cluster
+    job_params = {'name':"untitled", 'res':1, 'theta_res':1, 'dist':0.002,\
+            'mem':8, 'ndays':1, 'threads':4}
 
-    print job_params
-    print sdpb_params
+    for key in sdpb_params.keys():
+        if args[key]:
+            sdpb_params[key] = args[key]
+        elif key != "precision":
+            print "Warning, {} not specified. Using {} = {}.".format(\
+                    key, key, sdpb_params[key])
+
+    for key in job_params.keys():
+        if args[key]:
+            job_params[key]=args[key]
+
+    print "Using", sdpb_params
+    print "with", job_params
 
     submit_job(job_params, sdpb_params)
 

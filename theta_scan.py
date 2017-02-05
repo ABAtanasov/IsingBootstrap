@@ -5,6 +5,7 @@ import re
 import numpy as np
 import sys
 import os
+import argparse
 
 
 mainpath = os.path.dirname(__file__)
@@ -147,31 +148,82 @@ def check(deltas, theta):
     else:
         raise RuntimeError
 
-if __name__=="__main__":
-    name        = sys.argv[1]
-    Lambda      = int(sys.argv[2])  # 11
-    lmax        = int(sys.argv[3])  # 20
-    nu_max      = int(sys.argv[4])  # 8
-    precision   = int(sys.argv[5])  # 400
-    resolution  = int(sys.argv[6])  # 3
-    sdpbparams.append("--precision={}".format(precision))
+def mkrange(a,b, resolution):
+    if resolution == 1:
+        return np.array([0.5*(a+b)])
+    else:
+        return np.linspace(a, b, num = resolution)
 
-    if len(sys.argv) > 7:
-        distance = (float(sys.argv[7]), 10*float(sys.argv[7]))
-    if len(sys.argv) > 8:
-        ppn = int(sys.argv[8])
-        sdpbparams.append("--maxThreads={}".format(ppn))
-    else: distance = (0.002, 0.02)
-    print "using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
-            Lambda, lmax, nu_max, precision)
-    print "with resolution = {}, window = ({}, {}), threads = {}.".format(\
-            resolution, distance[0], distance[1], ppn)
+if __name__=="__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-n", "--name", type = str,\
+            help="name for the associated files")
+    parser.add_argument("-L","--Lambda", type = int, \
+           help="maximum derivative order")
+    parser.add_argument("-l", "--lmax", type = int, \
+            help="angular momentum cutoff")
+    parser.add_argument("-nu", "--nu_max", type = int, \
+            help="maximum number of poles")
+    parser.add_argument("-p", "--precision", type =int, \
+            help="working precision for calculations")
+    parser.add_argument("--res", type = int,\
+            help="number of sampling points along each axis")
+    parser.add_argument("--theta_res", type = int,\
+            help="number of sampling points over theta")
+    parser.add_argument("--dist", type = float,\
+            help="distance of \Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--threads", type = int, \
+            help="maximum threads used by OpenMP")
+    args = parser.parse_args()
+
+    if not args.Lambda:
+        print "No Lambda specified."
+        exit(1)
+    if not args.lmax:
+        print "No lmax specified."
+        exit(1)
+    if not args.nu_max:
+        print "No nu_max specified."
+        exit(1)
+
+    name   = args.name
+    Lambda = args.Lambda
+    lmax   = args.lmax
+    nu_max = args.nu_max
+
+    res       = 1
+    theta_res = 1
+
+
+    if args.res:
+        res = args.res
+    if args.theta_res:
+        theta_res = args.theta_res
+
+    distance = (0.002, 0.02)
+    if args.dist:
+        dist = float(args.dist)
+        distance = (dist, 10*dist)
+
+    if args.precision:
+        sdpbparams.append("--precision={}".format(args.precision))
+    if args.threads:
+        sdpbparams.append("--maxThreads={}".format(args.threads))
+
+    print "Using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
+            args.Lambda, args.lmax, args.nu_max, args.precision)
+    print "with resolutions = ({}, {}), ".format(args.res, args.theta_res)\
+            + "Delta window = ({}, {}), ".format(distance[0], distance[1])\
+            + "threads = {}".format(args.threads)
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
 
     Dsig = 0.518154
     Deps = 1.41267
+    theta0 = 0.969260330903202
 
-    for delta_s in np.linspace(Dsig - distance[0], Dsig + distance[0], num = resolution):
-        for delta_e in np.linspace(Deps - distance[1], Deps + distance[1], num = resolution):
-            check((delta_s, delta_e), 0.969260330903202)
+    for delta_s in mkrange(Dsig - distance[0], Dsig + distance[0], res):
+        for delta_e in mkrange(Deps - distance[1], Deps + distance[1], res):
+            for theta in mkrange(theta0 - np.pi, theta0 + np.pi, theta_res):
+                check((delta_s, delta_e), theta)
