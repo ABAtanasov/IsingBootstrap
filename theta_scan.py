@@ -177,6 +177,11 @@ if __name__=="__main__":
             help="maximum threads used by OpenMP")
     args = parser.parse_args()
 
+    # If no flags are given, print the help menu instead:
+    if len(sys.argv) == 1:
+        os.system("sage {} -h".format(os.path.abspath(__file__)))
+        exit(0)
+
     if not args.Lambda:
         print "No Lambda specified."
         exit(1)
