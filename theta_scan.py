@@ -115,12 +115,11 @@ def make_SDP(deltas, theta):
 
     V = epsilon_contribution
     constraint = []
-    sn = np.cos(theta)
-    cs = np.sin(theta)
+    sn = np.sin(theta)
+    cs = np.cos(theta)
     for m in V:
         ans = m[0][0]*(cs**2) + m[0][1]*sn*cs + m[1][0]*sn*cs + m[1][1]*(sn**2)
         constraint.append(ans)
-
     pvms.append(constraint)
     norm=[]
     for v in make_F(deltas,"even",0,{},Delta=0):
@@ -211,16 +210,20 @@ if __name__=="__main__":
         dist = float(args.dist)
         distance = (dist, 10*dist)
 
+    precision = 400
+    threads = 4
     if args.precision:
+        precision = args.precision
         sdpbparams.append("--precision={}".format(args.precision))
     if args.threads:
+        threads = args.threads
         sdpbparams.append("--maxThreads={}".format(args.threads))
 
     print "Using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
-            args.Lambda, args.lmax, args.nu_max, args.precision)
-    print "with resolutions = ({}, {}), ".format(args.res, args.theta_res)\
+            Lambda, lmax, nu_max, precision)
+    print "with resolutions = ({}, {}), ".format(res, theta_res)\
             + "Delta window = ({}, {}), ".format(distance[0], distance[1])\
-            + "threads = {}".format(args.threads)
+            + "threads = {}".format(threads)
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
 
@@ -230,5 +233,5 @@ if __name__=="__main__":
 
     for delta_s in mkrange(Dsig - distance[0], Dsig + distance[0], res):
         for delta_e in mkrange(Deps - distance[1], Deps + distance[1], res):
-            for theta in mkrange(theta0 - np.pi, theta0 + np.pi, theta_res):
+            for theta in mkrange(theta0 - 0.1, theta0 + 0.1, theta_res):
                 check((delta_s, delta_e), theta)
