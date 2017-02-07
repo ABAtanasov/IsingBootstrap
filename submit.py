@@ -109,7 +109,9 @@ if __name__ == "__main__":
     parser.add_argument("--theta_res", type = int,\
             help="number of sampling points over theta")
     parser.add_argument("--dist", type = float,\
-            help="distance of \Delta_sigma window from the 3D Ising point")
+            help="distance of Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--theta_dist", type = float,\
+            help="distance of theta window from the 3D Ising theta")
     parser.add_argument("--mem", type = int,\
             help="maximum memory allocated per node in cluster")
     parser.add_argument("--ndays", type = int,\
@@ -128,7 +130,7 @@ if __name__ == "__main__":
 
     # Params fed into the cluster
     job_params = {'name':"untitled", 'res':1, 'theta_res':1, 'dist':0.002,\
-            'mem':8, 'ndays':1, 'threads':4}
+            'theta_dist':0.1, 'mem':8, 'ndays':1, 'threads':4}
 
     for key in sdpb_params.keys():
         if args[key]:

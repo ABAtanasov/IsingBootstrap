@@ -171,7 +171,9 @@ if __name__=="__main__":
     parser.add_argument("--theta_res", type = int,\
             help="number of sampling points over theta")
     parser.add_argument("--dist", type = float,\
-            help="distance of \Delta_sigma window from the 3D Ising point")
+            help="distance of Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--theta_dist", type = float, \
+            help="distance of theta window from the 3D ising theta")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
     args = parser.parse_args()
@@ -205,10 +207,13 @@ if __name__=="__main__":
     if args.theta_res:
         theta_res = args.theta_res
 
-    distance = (0.002, 0.02)
+    distance   = (0.002, 0.02)
+    theta_dist = 0.1
     if args.dist:
         dist = float(args.dist)
         distance = (dist, 10*dist)
+    if args.theta_dist
+        theta_dist = float(args.theta_dist)
 
     precision = 400
     threads = 4
@@ -223,6 +228,7 @@ if __name__=="__main__":
             Lambda, lmax, nu_max, precision)
     print "with resolutions = ({}, {}), ".format(res, theta_res)\
             + "Delta window = ({}, {}), ".format(distance[0], distance[1])\
+            + "Theta window = {}, ".format(theta_dist)
             + "threads = {}".format(threads)
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
@@ -233,5 +239,5 @@ if __name__=="__main__":
 
     for delta_s in mkrange(Dsig - distance[0], Dsig + distance[0], res):
         for delta_e in mkrange(Deps - distance[1], Deps + distance[1], res):
-            for theta in mkrange(theta0 - 0.1, theta0 + 0.1, theta_res):
+            for theta in mkrange(theta0 - theta_dist, theta0 + theta_dist, theta_res):
                 check((delta_s, delta_e), theta)
