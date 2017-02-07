@@ -212,7 +212,7 @@ if __name__=="__main__":
     if args.dist:
         dist = float(args.dist)
         distance = (dist, 10*dist)
-    if args.theta_dist
+    if args.theta_dist:
         theta_dist = float(args.theta_dist)
 
     precision = 400
