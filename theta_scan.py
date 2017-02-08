@@ -146,6 +146,7 @@ def check(deltas, theta):
             .format(deltas[0], deltas[1], theta))
     else:
         raise RuntimeError
+    os.remove(xmlfile)
 
 def mkrange(a,b, resolution):
     if resolution == 1:
@@ -156,7 +157,7 @@ def mkrange(a,b, resolution):
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-n", "--name", type = str,\
+    parser.add_argument("-N", "--name", type = str,\
             help="name for the associated files")
     parser.add_argument("-L","--Lambda", type = int, \
            help="maximum derivative order")
@@ -172,10 +173,15 @@ if __name__=="__main__":
             help="number of sampling points over theta")
     parser.add_argument("--dist", type = float,\
             help="distance of Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--range", type = float, nargs = 4,\
+            help="4 floats xmin xmax ymin ymax")
     parser.add_argument("--theta_dist", type = float, \
             help="distance of theta window from the 3D ising theta")
+    parser.add_argument("--theta_range", type = float, nargs = 2,\
+            help="2 floats theta_min theta_max")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
+
     args = parser.parse_args()
 
     # If no flags are given, print the help menu instead:
@@ -207,6 +213,7 @@ if __name__=="__main__":
     if args.theta_res:
         theta_res = args.theta_res
 
+
     distance   = (0.002, 0.02)
     theta_dist = 0.1
     if args.dist:
@@ -214,6 +221,31 @@ if __name__=="__main__":
         distance = (dist, 10*dist)
     if args.theta_dist:
         theta_dist = float(args.theta_dist)
+
+    Dsig = 0.518154
+    Deps = 1.41267
+    theta0 = 0.969260330903202
+
+    sig_min = Dsig - distance[0]
+    sig_max = Dsig + distance[0]
+    eps_min = Deps - distance[1]
+    eps_max = Deps + distance[1]
+    theta_min = theta0 - theta_dist
+    theta_max = theta0 + theta_dist
+
+    if (not args.dist) and (not args.range):
+        print "No scaling distance specified. Working at distance (0.002, 0.02)."
+    elif args.range:
+        sig_min = args.range[0]
+        sig_max = args.range[1]
+        eps_min = args.range[2]
+        eps_max = args.range[3]
+
+    if (not args.theta_range) and (not args.theta_dist):
+        print "No theta distance specified. Working at distance 0.1"
+    elif args.theta_range:
+        theta_min = args.theta_range[0]
+        theta_max = args.theta_range[1]
 
     precision = 400
     threads = 4
@@ -227,17 +259,14 @@ if __name__=="__main__":
     print "Using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
             Lambda, lmax, nu_max, precision)
     print "with resolutions = ({}, {}), ".format(res, theta_res)\
-            + "Delta window = ({}, {}), ".format(distance[0], distance[1])\
-            + "Theta window = {}, ".format(theta_dist)
+            + "Delta window = (({}, {}), ({}, {})), ".format(\
+                sig_min, sig_max, eps_min, eps_max)\
+            + "theta window = ({}, {}), ".format(theta_min, theta_max)\
             + "threads = {}".format(threads)
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
 
-    Dsig = 0.518154
-    Deps = 1.41267
-    theta0 = 0.969260330903202
-
-    for delta_s in mkrange(Dsig - distance[0], Dsig + distance[0], res):
-        for delta_e in mkrange(Deps - distance[1], Deps + distance[1], res):
-            for theta in mkrange(theta0 - theta_dist, theta0 + theta_dist, theta_res):
+    for delta_s in mkrange(sig_min, sig_max, res):
+        for delta_e in mkrange(eps_min, eps_max, res):
+            for theta in mkrange(theta_min, theta_max, theta_res):
                 check((delta_s, delta_e), theta)

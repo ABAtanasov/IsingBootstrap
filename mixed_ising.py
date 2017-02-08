@@ -5,6 +5,7 @@ import re
 import numpy as np
 import sys
 import os
+import argparse
 
 
 mainpath = os.path.dirname(__file__)
@@ -114,56 +115,126 @@ def make_SDP(deltas):
     pvms.append(epsilon_contribution)
     norm=[]
     for v in make_F(deltas,"even",0,{},Delta=0):
-       norm.append(v[0][0]+v[0][1]+v[1][0]+v[1][1])
+        norm.append(v[0][0]+v[0][1]+v[1][0]+v[1][1])
     obj=0
     return context.sumrule_to_SDP(norm,obj,pvms)
 
-def check(*deltas):
+def check(deltas):
     prob=make_SDP(deltas)
 
     xmlfile = os.path.join(scratchpath, name+".xml")
 
     prob.write(xmlfile)
     sdpbargs=[sdpb,"-s",xmlfile]+sdpbparams
-    print sdpbargs
     out, err=Popen(sdpbargs,stdout=PIPE,stderr=PIPE).communicate()
 
     sol = re.compile(r'found ([^ ]+) feasible').search(out)
     sol = sol.groups()[0]
     if sol=="dual":
-        print("(Delta_sigma, Delta_epsilon)={0} is excluded."\
-            .format(deltas))
+        print "({}, {}) is excluded."\
+            .format(deltas[0], deltas[1])
     elif sol=="primal":
-        print("(Delta_sigma, Delta_epsilon)={0} is not excluded."\
-            .format(deltas))
+        print "({}, {}) is not excluded."\
+            .format(deltas[0], deltas[1])
     else:
         raise RuntimeError
+    os.remove(xmlfile)
+
+def mkrange(a,b, resolution):
+    if resolution == 1:
+        return np.array([0.5*(a+b)])
+    else:
+        return np.linspace(a, b, num = resolution)
 
 if __name__=="__main__":
-    name        = sys.argv[1]
-    Lambda      = int(sys.argv[2])  # 11
-    lmax        = int(sys.argv[3])  # 20
-    nu_max      = int(sys.argv[4])  # 8
-    precision   = int(sys.argv[5])  # 400
-    resolution  = int(sys.argv[6])  # 3
-    sdpbparams.append("--precision={}".format(precision))
+    parser = argparse.ArgumentParser()
 
-    if len(sys.argv) > 7:
-        distance = (float(sys.argv[7]), 10*float(sys.argv[7]))
-    if len(sys.argv) > 8:
-        ppn = int(sys.argv[8])
-        sdpbparams.append("--maxThreads={}".format(ppn))
-    else: distance = (0.002, 0.02)
-    print "using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
-            Lambda, lmax, nu_max, precision)
-    print "with resolution = {}, window = ({}, {}), threads = {}.".format(\
-            resolution, distance[0], distance[1], ppn)
+    parser.add_argument("-N", "--name", type = str,\
+            help="name for the associated files")
+    parser.add_argument("-L","--Lambda", type = int, \
+           help="maximum derivative order")
+    parser.add_argument("-l", "--lmax", type = int, \
+            help="angular momentum cutoff")
+    parser.add_argument("-nu", "--nu_max", type = int, \
+            help="maximum number of poles")
+    parser.add_argument("-p", "--precision", type =int, \
+            help="working precision for calculations")
+    parser.add_argument("--res", type = int,\
+            help="number of sampling points along each axis")
+    #parser.add_argument("--theta_res", type = int,\
+    #        help="number of sampling points over theta")
+    parser.add_argument("--dist", type = float,\
+            help="distance of Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--range", type = float, nargs = 4,\
+            help="4 floats xmin xmax ymin ymax")
+    #parser.add_argument("--theta_dist", type = float, \
+    #        help="distance of theta window from the 3D ising theta")
+    parser.add_argument("--threads", type = int, \
+            help="maximum threads used by OpenMP")
+    args = parser.parse_args()
 
-    context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
+    # If no flags are given, print the help menu instead:
+    if len(sys.argv) == 1:
+        os.system("sage {} -h".format(os.path.abspath(__file__)))
+        exit(0)
+
+    if not args.Lambda:
+        print "No Lambda specified."
+        exit(1)
+    if not args.lmax:
+        print "No lmax specified."
+        exit(1)
+    if not args.nu_max:
+        print "No nu_max specified."
+        exit(1)
+
+    name   = args.name
+    Lambda = args.Lambda
+    lmax   = args.lmax
+    nu_max = args.nu_max
+
+    res       = 1
+    if args.res:
+        res = args.res
 
     Dsig = 0.518154
     Deps = 1.41267
 
-    for delta_s in np.linspace(Dsig - distance[0], Dsig + distance[0], num = resolution):
-        for delta_e in np.linspace(Deps - distance[1], Deps + distance[1], num = resolution):
-            check(delta_s, delta_e)
+    distance   = (0.002, 0.02)
+    if args.dist:
+        dist = float(args.dist)
+        distance = (dist, 10*dist)
+
+    precision = 400
+    threads = 4
+    if args.precision:
+        precision = args.precision
+        sdpbparams.append("--precision={}".format(args.precision))
+    if args.threads:
+        threads = args.threads
+        sdpbparams.append("--maxThreads={}".format(args.threads))
+
+    sig_min = Dsig - distance[0]
+    sig_max = Dsig + distance[0]
+    eps_min = Deps - distance[1]
+    eps_max = Deps + distance[1]
+
+    if (not args.dist) and (not args.range):
+        print "No distance specified. Working at distance (0.002, 0.02)."
+    elif args.range:
+        sig_min = args.range[0]
+        sig_max = args.range[1]
+        eps_min = args.range[2]
+        eps_max = args.range[3]
+
+    print "Using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
+            Lambda, lmax, nu_max, precision)
+    print "with resolutions = {}, ".format(res)\
+            + "Delta window = (({}, {}), ({}, {})), ".format(\
+            sig_min, sig_max, eps_min, eps_max)\
+            + "threads = {}".format(threads)
+
+    context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
+    for delta_s in mkrange(sig_min, sig_max, res):
+        for delta_e in mkrange(eps_min, eps_max, res):
+             check((delta_s, delta_e))

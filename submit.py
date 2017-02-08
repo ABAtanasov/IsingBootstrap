@@ -17,26 +17,48 @@ def mkdir_p(path):
         else: raise
 
 # --------------------------------------------------------
-# Given the job params and sdpb params this will set up everything
-# for the cluster to run cboot and sdpb
+# Given the job params and sdpb params this will set up
+# everything for the cluster to run cboot and sdpb
 # --------------------------------------------------------
 def submit_job(job_params, sdpb_params):
     name      = job_params['name']
+    program   = job_params['program']
     Lambda    = sdpb_params['Lambda']
     lmax      = sdpb_params['lmax']
     nu_max    = sdpb_params['nu_max']
     precision = sdpb_params['precision']
     res       = job_params['res']
-    theta_res = job_params['theta_res']
     dist      = job_params['dist']
+    theta_res = job_params['theta_res']
+    theta_dist= job_params['theta_dist']
+    range     = job_params['range']
+    theta_range = job_params['theta_range']
     mem       = job_params['mem']
     ndays     = job_params['ndays']
     threads   = job_params['threads']
+    queue     = job_params['queue']
 
-    cmd = "sage theta_scan.py -n={} -L={} -l={} -nu={} -p={}".format(\
-            name, Lambda, lmax, nu_max, precision)\
-            + " --res={} --theta_res={} --dist={} --threads={}".format(\
-            res, theta_res, dist, threads)
+    if range:
+        scaling_info = "--range {} {} {} {} --res {} ".format(\
+                range[0], range[1], range[2], range[3], res)
+    else:
+        scaling_info = "--dist={} --res {} ".format(dist, res)
+
+    if theta_range:
+        theta_info = "--theta_range {} {} --theta_res={} ".format(\
+                theta_range[0], theta_range[1], theta_res)
+    else:
+        theta_info = "--theta_dist {} --theta_res={} ".format(\
+                theta_dist, theta_res)
+
+    if program == "mixed_ising":
+        theta_info = ""
+
+    cmd = "sage {}.py -N={} -L={} -l={} -nu={} -p={} ".format(\
+            program, name, Lambda, lmax, nu_max, precision)\
+            + scaling_info\
+            + theta_info\
+            + "--threads={}".format(threads)
 
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
@@ -52,11 +74,11 @@ def submit_job(job_params, sdpb_params):
              "scratch":scratchpath, "out":outpath}
 
     jobfile = write_jobfile(cmd, name, paths,\
-            mem = mem, ndays = ndays, threads = threads)
+            mem = mem, ndays = ndays, threads = threads, queue = queue)
 
     os.system("bsub < " + jobfile)
 
-    print "submitted:\n  {}.".format(cmd)
+    print "submitted:\n  {}".format(cmd)
 
 
 # --------------------------------------------------------
@@ -94,8 +116,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-n", "--name", type = str,\
+    parser.add_argument("-N", "--name", type = str,\
             help="name for the associated files")
+    parser.add_argument("-P", "--program", type = str,\
+            help="name of the program to execute")
     parser.add_argument("-L","--Lambda", type = int, \
            help="maximum derivative order")
     parser.add_argument("-l", "--lmax", type = int, \
@@ -112,12 +136,18 @@ if __name__ == "__main__":
             help="distance of Delta_sigma window from the 3D Ising point")
     parser.add_argument("--theta_dist", type = float,\
             help="distance of theta window from the 3D Ising theta")
+    parser.add_argument("--range", type = float, nargs = 4,\
+            help="4 floats xmin xmax ymin ymax")
+    parser.add_argument("--theta_range", type = float, nargs = 2,\
+            help="2 floats theta_min theta_max")
     parser.add_argument("--mem", type = int,\
             help="maximum memory allocated per node in cluster")
     parser.add_argument("--ndays", type = int,\
             help="number of days to run process on cluster")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
+    parser.add_argument("-q", "--queue", type = str,\
+            help="queue to submit to")
     args = parser.parse_args().__dict__
 
     # If no flags are given, print the help menu instead:
@@ -125,12 +155,25 @@ if __name__ == "__main__":
         os.system("python {} -h".format(os.path.abspath(__file__)))
         exit(0)
 
+    distance   = (0.002, 0.02)
+    if args['range']:
+        sig_min = args['range'][0]
+        sig_max = args['range'][1]
+        eps_min = args['range'][2]
+        eps_max = args['range'][3]
+    elif args['dist']:
+        dist = float(args['dist'])
+        distance = (dist, 10*dist)
+
     # Params fed into sdpb
     sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400}
 
     # Params fed into the cluster
-    job_params = {'name':"untitled", 'res':1, 'theta_res':1, 'dist':0.002,\
-            'theta_dist':0.1, 'mem':8, 'ndays':1, 'threads':4}
+    job_params = {'name':"untitled", 'program':"mixed_ising",\
+            'res':1, 'theta_res':1, 'dist':0.002,\
+            'theta_dist':0.1, 'mem':8, 'ndays':1, 'threads':4,\
+            'range':None, 'theta_range':None,\
+            'queue':'shared'}
 
     for key in sdpb_params.keys():
         if args[key]:
