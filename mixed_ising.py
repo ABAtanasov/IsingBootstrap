@@ -164,16 +164,12 @@ if __name__=="__main__":
             help="maximum number of poles")
     parser.add_argument("-p", "--precision", type =int, \
             help="working precision for calculations")
-    parser.add_argument("--res", type = int,\
+    parser.add_argument("--res", type = int, nargs = 2, \
             help="number of sampling points along each axis")
-    #parser.add_argument("--theta_res", type = int,\
-    #        help="number of sampling points over theta")
     parser.add_argument("--dist", type = float,\
             help="distance of Delta_sigma window from the 3D Ising point")
     parser.add_argument("--range", type = float, nargs = 4,\
             help="4 floats xmin xmax ymin ymax")
-    #parser.add_argument("--theta_dist", type = float, \
-    #        help="distance of theta window from the 3D ising theta")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
     args = parser.parse_args()
@@ -198,7 +194,7 @@ if __name__=="__main__":
     lmax   = args.lmax
     nu_max = args.nu_max
 
-    res       = 1
+    res       = [1, 1]
     if args.res:
         res = args.res
 
@@ -234,12 +230,12 @@ if __name__=="__main__":
 
     print "Using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
             Lambda, lmax, nu_max, precision)
-    print "with resolutions = {}, ".format(res)\
+    print "with resolutions =({}, {}), ".format(res[0], res[1])\
             + "Delta window = (({}, {}), ({}, {})), ".format(\
             sig_min, sig_max, eps_min, eps_max)\
             + "threads = {}".format(threads)
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
-    for delta_s in mkrange(sig_min, sig_max, res):
-        for delta_e in mkrange(eps_min, eps_max, res):
+    for delta_s in mkrange(sig_min, sig_max, res[0]):
+        for delta_e in mkrange(eps_min, eps_max, res[1]):
              check((delta_s, delta_e))

@@ -39,10 +39,10 @@ def submit_job(job_params, sdpb_params):
     queue     = job_params['queue']
 
     if range:
-        scaling_info = "--range {} {} {} {} --res {} ".format(\
-                range[0], range[1], range[2], range[3], res)
+        scaling_info = "--range {} {} {} {} --res {} {} ".format(\
+                range[0], range[1], range[2], range[3], res[0], res[1])
     else:
-        scaling_info = "--dist={} --res {} ".format(dist, res)
+        scaling_info = "--dist={} --res {} {} ".format(dist, res[0], res[1])
 
     if theta_range:
         theta_info = "--theta_range {} {} --theta_res={} ".format(\
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             help="maximum number of poles")
     parser.add_argument("-p", "--precision", type =int, \
             help="working precision for calculations")
-    parser.add_argument("--res", type = int,\
+    parser.add_argument("--res", type = int, nargs = 2,\
             help="number of sampling points along each axis")
     parser.add_argument("--theta_res", type = int,\
             help="number of sampling points over theta")
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     # Params fed into the cluster
     job_params = {'name':"untitled", 'program':"mixed_ising",\
-            'res':1, 'theta_res':1, 'dist':0.002,\
+            'res':[1, 1], 'theta_res':1, 'dist':0.002,\
             'theta_dist':0.1, 'mem':8, 'ndays':1, 'threads':4,\
             'range':None, 'theta_range':None,\
             'queue':'shared'}
