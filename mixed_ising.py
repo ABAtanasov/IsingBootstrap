@@ -127,8 +127,13 @@ def check(deltas):
     prob.write(xmlfile)
     sdpbargs=[sdpb,"-s",xmlfile]+sdpbparams
     out, err=Popen(sdpbargs,stdout=PIPE,stderr=PIPE).communicate()
-
+    if err:
+        print err
     sol = re.compile(r'found ([^ ]+) feasible').search(out)
+    if sol.groups() == None:
+        print out
+        print err
+        exit(0)
     sol = sol.groups()[0]
     if sol=="dual":
         print "({}, {}) is excluded."\

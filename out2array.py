@@ -5,6 +5,10 @@ lines = sys.stdin.readlines()
 
 inclusion = re.compile("is not excluded")
 number_data = re.compile("[\d]+.[\d]+")
+thetas = False
+if len(sys.argv) > 2:
+    if sys.argv[2] == 'thetas':
+        thetas = True
 
 
 sigmas = []
@@ -16,9 +20,9 @@ for line in lines:
         data = number_data.findall(line)
         sigmas.append(float(data[0]))
         epsilons.append(float(data[1]))
-        thetas.append(float(data[2]))
+        if thetas: thetas.append(float(data[2]))
 
 
 print sigmas
 print epsilons
-print thetas
+if thetas: print thetas

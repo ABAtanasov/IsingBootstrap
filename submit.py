@@ -88,7 +88,7 @@ def submit_job(job_params, sdpb_params):
 def write_jobfile(cmd, jobname, paths,
                   nodes=10, threads=1, gpus=0, mem=8, ndays=1, queue='shared'):
 
-    threads = 'export OMP_NUM_THREADS={}\n'.format(threads)
+    exp_threads = 'export OMP_NUM_THREADS={}\n'.format(threads)
 
     jobfile = os.path.join(paths["sh_scripts"], jobname + '.sh')
 
@@ -98,12 +98,13 @@ def write_jobfile(cmd, jobname, paths,
             #+ '#BSUB -l nodes={}:ppn={}\n'.format(nodes, ppn)
             + '#BSUB -M {}\n'.format(int(mem)*1000)          #good
             + '#BSUB -W {}:00\n'.format(24*int(ndays))       #good
+            + '#BSUB -n {}\n'.format(threads)
             + '#BSUB -q {}\n'.format(queue)
-            + '#BSUB -J {}\n'.format(jobname)           #good
+            + '#BSUB -J {}\n'.format(jobname)                #good
             + '#BSUB -e {}/{}.e%J\n'.format(paths["scratch"], jobname)
             + '#BSUB -o {}/{}.o%J\n'.format(paths["scratch"], jobname)
             + '\n'
-            + threads                                   #good
+            + exp_threads                                    #good
             + '. ~/.bashrc\n'
             + '{} > {}/{}.out 2>&1\n'.format(cmd, paths["out"], jobname)
             + '\n'
