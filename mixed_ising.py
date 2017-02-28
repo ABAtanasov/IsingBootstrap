@@ -19,6 +19,13 @@ lmax   = None
 nu_max = None
 name = None
 
+
+def mkrange(a,b, resolution):
+    if resolution == 1:
+        return np.array([0.5*(a+b)])
+    else:
+        return np.linspace(a, b, num = resolution)
+
 #
 @cached_function
 def prepare_g_0(spin,Delta=None):
@@ -128,12 +135,19 @@ def check(deltas):
     sdpbargs=[sdpb,"-s",xmlfile]+sdpbparams
     out, err=Popen(sdpbargs,stdout=PIPE,stderr=PIPE).communicate()
     if err:
-        print err
-    sol = re.compile(r'found ([^ ]+) feasible').search(out)
-    if sol.groups() == None:
-        print out
+        print "------------------------------------"
+        print "An error occurred:"
+        print "------------------------------------"
         print err
         exit(0)
+    sol = re.compile(r'found ([^ ]+) feasible').search(out)
+    if sol == None:
+        print "------------------------------------"
+        print "The out file wasn't right"
+        print "------------------------------------"
+        print out
+        exit(0)
+
     sol = sol.groups()[0]
     if sol=="dual":
         print "({}, {}) is excluded."\
@@ -144,12 +158,6 @@ def check(deltas):
     else:
         raise RuntimeError
     os.remove(xmlfile)
-
-def mkrange(a,b, resolution):
-    if resolution == 1:
-        return np.array([0.5*(a+b)])
-    else:
-        return np.linspace(a, b, num = resolution)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -172,68 +180,66 @@ if __name__=="__main__":
             help="4 floats xmin xmax ymin ymax")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
-    args = parser.parse_args()
+    parser.add_argument("--maxIters", type = int, \
+            help="maximum number of iterations used by sdpb")
+    args = parser.parse_args().__dict__
 
     # If no flags are given, print the help menu instead:
     if len(sys.argv) == 1:
         os.system("sage {} -h".format(os.path.abspath(__file__)))
         exit(0)
 
-    if not args.Lambda:
-        print "No Lambda specified."
-        exit(1)
-    if not args.lmax:
-        print "No lmax specified."
-        exit(1)
-    if not args.nu_max:
-        print "No nu_max specified."
-        exit(1)
+    # Params fed into sdpb
+    sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400, 'maxIters':500}
 
-    name   = args.name
-    Lambda = args.Lambda
-    lmax   = args.lmax
-    nu_max = args.nu_max
+    # Params specifying how sdpb will be used in the for-loop
+    job_params = {'name':"untitled",'res':[1, 1], 'dist':0.00,'threads':4,'range':None}
 
-    res       = [1, 1]
-    if args.res:
-        res = args.res
+    for key in sdpb_params.keys():
+        if args[key]:
+            sdpb_params[key] = args[key]
+        elif key not in ["precision", "maxIters"]:
+            print "Warning, {} not specified. Using {} = {}.".format(\
+                    key, key, sdpb_params[key])
+
+    for key in job_params.keys():
+        if args[key]:
+            job_params[key]=args[key]
+
+    name = job_params['name']
 
     Dsig = 0.518154
     Deps = 1.41267
 
-    distance   = (0.002, 0.02)
-    if args.dist:
-        dist = float(args.dist)
-        distance = (dist, 10*dist)
+    Lambda = sdpb_params['Lambda']
+    lmax = sdpb_params['lmax']
+    nu_max = sdpb_params['nu_max']
 
-    precision = 400
-    threads = 4
-    if args.precision:
-        precision = args.precision
-        sdpbparams.append("--precision={}".format(args.precision))
-    if args.threads:
-        threads = args.threads
-        sdpbparams.append("--maxThreads={}".format(args.threads))
+    dist = float(job_params['dist'])
+    distance = (dist, 10*dist)
+    res = job_params['res']
 
     sig_min = Dsig - distance[0]
     sig_max = Dsig + distance[0]
     eps_min = Deps - distance[1]
     eps_max = Deps + distance[1]
 
-    if (not args.dist) and (not args.range):
-        print "No distance specified. Working at distance (0.002, 0.02)."
-    elif args.range:
-        sig_min = args.range[0]
-        sig_max = args.range[1]
-        eps_min = args.range[2]
-        eps_max = args.range[3]
+    if args['range']:
+        sig_min = job_params['range'][0]
+        sig_max = job_params['range'][1]
+        eps_min = job_params['range'][2]
+        eps_max = job_params['range'][3]
 
-    print "Using Lambda = {}, lmax = {}, nu_max = {}, precision = {}".format(\
-            Lambda, lmax, nu_max, precision)
-    print "with resolutions =({}, {}), ".format(res[0], res[1])\
+    sdpbparams.append("--precision={}".format(sdpb_params['precision']))
+    sdpbparams.append("--maxThreads={}".format(job_params['threads']))
+    sdpbparams.append("--maxIterations={}".format(sdpb_params['maxIters']))
+
+    print "Using {}".format(sdpb_params)
+    print "with resolutions = ({}, {}), ".format(res[0], res[1])\
             + "Delta window = (({}, {}), ({}, {})), ".format(\
             sig_min, sig_max, eps_min, eps_max)\
-            + "threads = {}".format(threads)
+            + "threads = {}".format(job_params['threads'])
+
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
     for delta_s in mkrange(sig_min, sig_max, res[0]):
