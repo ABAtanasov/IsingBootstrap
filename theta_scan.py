@@ -18,6 +18,7 @@ context = None
 lmax   = None
 nu_max = None
 name = None
+keepxml = None
 
 #
 @cached_function
@@ -146,7 +147,8 @@ def check(deltas, theta):
             .format(deltas[0], deltas[1], theta))
     else:
         raise RuntimeError
-    os.remove(xmlfile)
+    if not keepxml:
+        os.remove(xmlfile)
 
 def mkrange(a,b, resolution):
     if resolution == 1:
@@ -179,6 +181,8 @@ if __name__=="__main__":
             help="distance of theta window from the 3D ising theta")
     parser.add_argument("--theta_range", type = float, nargs = 2,\
             help="2 floats theta_min theta_max")
+    parser.add_argument("--keepxml", type = bool, \
+            help="do we keep the xml file? Default is no.")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
 
@@ -203,6 +207,8 @@ if __name__=="__main__":
     Lambda = args.Lambda
     lmax   = args.lmax
     nu_max = args.nu_max
+
+    keepxml = args.keepxml
 
     res       = [1, 1]
     theta_res = 1

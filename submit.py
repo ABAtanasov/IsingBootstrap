@@ -32,7 +32,9 @@ def submit_job(job_params, sdpb_params):
     theta_res = job_params['theta_res']
     theta_dist= job_params['theta_dist']
     range     = job_params['range']
+    origin    = job_params['origin']
     theta_range = job_params['theta_range']
+    keepxml   = job_params['keepxml']
     mem       = job_params['mem']
     ndays     = job_params['ndays']
     threads   = job_params['threads']
@@ -41,6 +43,9 @@ def submit_job(job_params, sdpb_params):
     if range:
         scaling_info = "--range {} {} {} {} --res {} {} ".format(\
                 range[0], range[1], range[2], range[3], res[0], res[1])
+    elif origin:
+        scaling_info = "--origin {} {} --dist={} --res={} {} ".format(\
+                origin[0], origin[1], theta_dist, res[0], res[1])
     else:
         scaling_info = "--dist={} --res {} {} ".format(dist, res[0], res[1])
 
@@ -54,8 +59,8 @@ def submit_job(job_params, sdpb_params):
     if program == "mixed_ising":
         theta_info = ""
 
-    cmd = "sage {}.py -N={} -L={} -l={} -nu={} -p={} ".format(\
-            program, name, Lambda, lmax, nu_max, precision)\
+    cmd = "sage {}.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} ".format(\
+            program, name, Lambda, lmax, nu_max, precision, keepxml)\
             + scaling_info\
             + theta_info\
             + "--threads={}".format(threads)
@@ -139,6 +144,9 @@ if __name__ == "__main__":
             help="distance of theta window from the 3D Ising theta")
     parser.add_argument("--range", type = float, nargs = 4,\
             help="4 floats xmin xmax ymin ymax")
+    parser.add_argument("--origin", type = float, nargs = 2,\
+            help="2 floats x_origin y_origin")
+
     parser.add_argument("--theta_range", type = float, nargs = 2,\
             help="2 floats theta_min theta_max")
     parser.add_argument("--mem", type = int,\
@@ -147,6 +155,8 @@ if __name__ == "__main__":
             help="number of days to run process on cluster")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
+    parser.add_argument("--keepxml", type = bool,\
+            help="do we keep the xml? Default is no.")
     parser.add_argument("-q", "--queue", type = str,\
             help="queue to submit to")
     args = parser.parse_args().__dict__
@@ -173,8 +183,8 @@ if __name__ == "__main__":
     job_params = {'name':"untitled", 'program':"mixed_ising",\
             'res':[1, 1], 'theta_res':1, 'dist':0.002,\
             'theta_dist':0.1, 'mem':8, 'ndays':1, 'threads':4,\
-            'range':None, 'theta_range':None,\
-            'queue':'shared'}
+            'range':None, 'theta_range':None, 'origin':None,\
+            'keepxml':False ,'queue':'shared'}
 
     for key in sdpb_params.keys():
         if args[key]:

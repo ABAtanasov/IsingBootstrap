@@ -18,6 +18,7 @@ context = None
 lmax   = None
 nu_max = None
 name = None
+keepxml = None
 
 
 def mkrange(a,b, resolution):
@@ -157,7 +158,8 @@ def check(deltas):
             .format(deltas[0], deltas[1])
     else:
         raise RuntimeError
-    os.remove(xmlfile)
+    if not keepxml:
+        os.remove(xmlfile)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -178,10 +180,15 @@ if __name__=="__main__":
             help="distance of Delta_sigma window from the 3D Ising point")
     parser.add_argument("--range", type = float, nargs = 4,\
             help="4 floats xmin xmax ymin ymax")
+    parser.add_argument("-o", "--origin", type = float, nargs = 2,\
+            help="2 floats x_origin, y_origin")
+
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
     parser.add_argument("--maxIters", type = int, \
             help="maximum number of iterations used by sdpb")
+    parser.add_argument("--keepxml", type = bool, \
+            help="do we keep the xml? Default is no.")
     args = parser.parse_args().__dict__
 
     # If no flags are given, print the help menu instead:
@@ -193,12 +200,12 @@ if __name__=="__main__":
     sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400, 'maxIters':500}
 
     # Params specifying how sdpb will be used in the for-loop
-    job_params = {'name':"untitled",'res':[1, 1], 'dist':0.00,'threads':4,'range':None}
+    job_params = {'name':"untitled",'res':[1, 1], 'dist':0.00,'threads':4,'range':None, 'keepxml': False}
 
     for key in sdpb_params.keys():
         if args[key]:
             sdpb_params[key] = args[key]
-        elif key not in ["precision", "maxIters"]:
+        elif key not in ["precision", "maxIters", "keepxml"]:
             print "Warning, {} not specified. Using {} = {}.".format(\
                     key, key, sdpb_params[key])
 
@@ -207,6 +214,7 @@ if __name__=="__main__":
             job_params[key]=args[key]
 
     name = job_params['name']
+    keepxml = job_params['keepxml']
 
     Dsig = 0.518154
     Deps = 1.41267
@@ -229,6 +237,12 @@ if __name__=="__main__":
         sig_max = job_params['range'][1]
         eps_min = job_params['range'][2]
         eps_max = job_params['range'][3]
+
+    if args['origin']:
+        sig_min = args['origin'][0] - distance[0]
+        sig_max = args['origin'][0] + distance[0]
+        eps_min = args['origin'][1] - distance[1]
+        eps_max = args['origin'][1] + distance[1]
 
     sdpbparams.append("--precision={}".format(sdpb_params['precision']))
     sdpbparams.append("--maxThreads={}".format(job_params['threads']))
