@@ -12,7 +12,8 @@ mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
 
 sdpb="./sdpb"
-sdpbparams=["--findPrimalFeasible","--findDualFeasible","--noFinalCheckpoint"]
+sdpbparams=["--findPrimalFeasible","--findDualFeasible","--noFinalCheckpoint",\
+            "--dualErrorThreshold=1e-15"]
 
 context = None
 lmax   = None
