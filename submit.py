@@ -27,6 +27,7 @@ def submit_job(job_params, sdpb_params):
     lmax      = sdpb_params['lmax']
     nu_max    = sdpb_params['nu_max']
     precision = sdpb_params['precision']
+    maxIters  = sdpb_params['maxIters']
     res       = job_params['res']
     dist      = job_params['dist']
     theta_res = job_params['theta_res']
@@ -35,6 +36,7 @@ def submit_job(job_params, sdpb_params):
     origin    = job_params['origin']
     theta_range = job_params['theta_range']
     keepxml   = job_params['keepxml']
+    printxml  = job_params['printxml']
     mem       = job_params['mem']
     ndays     = job_params['ndays']
     threads   = job_params['threads']
@@ -59,11 +61,11 @@ def submit_job(job_params, sdpb_params):
     if program == "mixed_ising":
         theta_info = ""
 
-    cmd = "sage {}.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} ".format(\
-            program, name, Lambda, lmax, nu_max, precision, keepxml)\
+    cmd = "sage {}.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} --printxml={} --maxIters={} ".format(\
+            program, name, Lambda, lmax, nu_max, precision, keepxml, printxml, maxIters)\
             + scaling_info\
             + theta_info\
-            + "--threads={}".format(threads)
+            + "--threads={} ".format(threads)
 
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
@@ -155,8 +157,12 @@ if __name__ == "__main__":
             help="number of days to run process on cluster")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
+    parser.add_argument("--maxIters", type=int, \
+            help="max number of sdpb iterations")
     parser.add_argument("--keepxml", type = bool,\
-            help="do we keep the xml? Default is no.")
+            help="Do we keep the xml? Default is no.")
+    parser.add_argument("--printxml", type = bool,\
+            help="Do we print the sdpb output? Default is no.")
     parser.add_argument("-q", "--queue", type = str,\
             help="queue to submit to")
     args = parser.parse_args().__dict__
@@ -177,19 +183,19 @@ if __name__ == "__main__":
         distance = (dist, 10*dist)
 
     # Params fed into sdpb
-    sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400}
+    sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400, 'maxIters':500}
 
     # Params fed into the cluster
     job_params = {'name':"untitled", 'program':"mixed_ising",\
             'res':[1, 1], 'theta_res':1, 'dist':0.002,\
             'theta_dist':0.1, 'mem':8, 'ndays':1, 'threads':4,\
             'range':None, 'theta_range':None, 'origin':None,\
-            'keepxml':False ,'queue':'shared'}
+            'keepxml':False, 'printxml':False, 'queue':'shared'}
 
     for key in sdpb_params.keys():
         if args[key]:
             sdpb_params[key] = args[key]
-        elif key != "precision":
+        elif key not in ["precision", "maxIters"]:
             print "Warning, {} not specified. Using {} = {}.".format(\
                     key, key, sdpb_params[key])
 

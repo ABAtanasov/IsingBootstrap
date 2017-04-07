@@ -41,6 +41,8 @@ if __name__ == "__main__":
             help="maximum memory allocated per node in cluster")
     parser.add_argument("--ndays", type = int,\
             help="number of days to run process on cluster")
+    parser.add_argument("--maxIters", type = int,\
+            help="number of iterations for sdpb")
     parser.add_argument("--threads", type = int, \
             help="maximum threads used by OpenMP")
     parser.add_argument("-q", "--queue", type = str,\

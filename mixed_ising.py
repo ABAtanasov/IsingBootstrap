@@ -20,6 +20,7 @@ lmax   = None
 nu_max = None
 name = None
 keepxml = None
+printxml = None
 
 
 def mkrange(a,b, resolution):
@@ -49,7 +50,7 @@ def prepare_g(spin,Delta_se,Delta=None):
         return (prepare_g_0(spin),
                 prepare_g_se(spin,Delta_se),
                 prepare_g_es(spin,Delta_se))
-    else: 
+    else:
         g_0=context.gBlock(spin,Delta,0,0)
         if not (Delta==0 and spin==0):
             g_se=context.gBlock(spin,Delta,Delta_se,Delta_se)
@@ -149,6 +150,8 @@ def check(deltas):
         print "------------------------------------"
         print out
         exit(0)
+    elif printxml:
+        print out
 
     sol = sol.groups()[0]
     if sol=="dual":
@@ -189,7 +192,9 @@ if __name__=="__main__":
     parser.add_argument("--maxIters", type = int, \
             help="maximum number of iterations used by sdpb")
     parser.add_argument("--keepxml", type = bool, \
-            help="do we keep the xml? Default is no.")
+            help="Do we keep the xml? Default is no.")
+    parser.add_argument("--printxml", type = bool, \
+            help="Do we print out the sdpb output? Default is no.")
     args = parser.parse_args().__dict__
 
     # If no flags are given, print the help menu instead:
@@ -201,7 +206,8 @@ if __name__=="__main__":
     sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400, 'maxIters':500}
 
     # Params specifying how sdpb will be used in the for-loop
-    job_params = {'name':"untitled",'res':[1, 1], 'dist':0.00,'threads':4,'range':None, 'keepxml': False}
+    job_params = {'name':"untitled",'res':[1, 1], 'dist':0.00,'threads':4,'range':None,\
+            'keepxml': False, 'printxml':False}
 
     for key in sdpb_params.keys():
         if args[key]:
@@ -216,6 +222,7 @@ if __name__=="__main__":
 
     name = job_params['name']
     keepxml = job_params['keepxml']
+    printxml = job_params['printxml']
 
     Dsig = 0.518154
     Deps = 1.41267
