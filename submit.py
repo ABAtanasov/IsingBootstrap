@@ -7,16 +7,8 @@ import errno
 import sys
 import argparse
 import numpy as np
+from point_generator import generate_to_file
 
-
-# --------------------------------------------------------
-# Makes a numpy array from a to b with a given resolution
-# --------------------------------------------------------
-def mkrange(a, b, resolution):
-    if resolution == 1:
-        return np.array([0.5*(a+b)])
-    else:
-        return np.linspace(a, b, num = resolution)
 
 # --------------------------------------------------------
 # Makes a directory if it is not already made
@@ -47,7 +39,7 @@ def submit_job(job_params, sdpb_params):
     res       = job_params['res']
     theta_res = job_params['theta_res']
     keepxml   = job_params['keepxml']
-    printxml  = job_params['printxml']
+    print_sdpb  = job_params['print_sdpbl']
     mem       = job_params['mem']
     ndays     = job_params['ndays']
     queue     = job_params['queue']
@@ -60,8 +52,8 @@ def submit_job(job_params, sdpb_params):
         theta_info = "--theta_range {} {} --theta_res={} ".format(\
                 theta_range[0], theta_range[1], theta_res)
 
-    cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} --printxml={} --maxIters={} ".format(\
-            name, Lambda, lmax, nu_max, precision, keepxml, printxml, maxIters)\
+    cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} --print_sdpb={} --maxIters={} ".format(\
+            name, Lambda, lmax, nu_max, precision, keepxml, print_sdpb, maxIters)\
             + scaling_info\
             + theta_info\
             + "--threads={} ".format(threads)
@@ -112,16 +104,14 @@ def write_jobfile(cmd, jobname, paths,
             + '\n'
             + exp_threads                                    #good
             + '. ~/.bashrc\n'
-            + '{} > {}/{}.out 2>&1\n'.format(cmd, paths["out"], jobname)
+            + '{} 2>&1\n'.format(cmd)
             + '\n'
             + 'exit 0;\n'
             )
 
     return jobfile
 
-    sdpb_params = {'Lambda':11, 'lmax':20, 'nu_max':8, 'precision':400, 'maxIters':500, 'threads':4}
 
-    # Params fed into the cluster
 if __name__ == "__main__":
 
     # If no flags are given, print the help menu instead:
@@ -140,31 +130,33 @@ if __name__ == "__main__":
     # --------------------------------------
     # Args for mixed_ising.py
     # --------------------------------------
-    parser.add_argument("-N", "--name", type = str,\
-            help="name for the associated files")
-    parser.add_argument("-L","--Lambda", type = int, \
-           help="maximum derivative order")
-    parser.add_argument("-l", "--lmax", type = int, \
-            help="angular momentum cutoff")
-    parser.add_argument("-nu", "--nu_max", type = int, \
-            help="maximum number of poles")
-    parser.add_argument("--res", type = int, nargs = 2,\
-            help="number of sampling points along each axis")
-    parser.add_argument("--theta_res", type = int,\
-            help="number of sampling points over use_theta")
-    parser.add_argument("--dist", type = float,\
-            help="distance of Delta_sigma window from the 3D Ising point")
-    parser.add_argument("--theta_dist", type = float,\
-            help="distance of use_theta window from the 3D Ising use_theta")
-    parser.add_argument("--range", type = float, nargs = 4,\
-            help="4 floats xmin xmax ymin ymax")
-    parser.add_argument("--origin", type = float, nargs = 2,\
-            help="2 floats x_origin y_origin")
-    parser.add_argument("--theta_range", type = float, nargs = 2,\
-            help="2 floats theta_min theta_max")
-    parser.add_argument("--keepxml", type=bool, \
+    parser.add_argument("-N", "--name", type=str,
+                        help="name for the associated files")
+    parser.add_argument("-L", "--Lambda", type=int,
+                        help="maximum derivative order")
+    parser.add_argument("-l", "--lmax", type=int,
+                        help="angular momentum cutoff")
+    parser.add_argument("-nu", "--nu_max", type=int,
+                        help="maximum number of poles")
+    parser.add_argument("--res", type=int, nargs=2,
+                        help="number of sampling points along each axis")
+    parser.add_argument("-f", "--file", type=str,
+                        help="optional filename from which we read the points")
+    parser.add_argument("--theta_res", type=int,
+                        help="number of sampling points over use_theta")
+    parser.add_argument("--dist", type=float,
+                        help="distance of Delta_sigma window from the 3D Ising point")
+    parser.add_argument("--theta_dist", type=float,
+                        help="distance of use_theta window from the 3D Ising use_theta")
+    parser.add_argument("--range", type=float, nargs=4,
+                        help="4 floats xmin xmax ymin ymax")
+    parser.add_argument("--origin", type=float, nargs=2,
+                        help="2 floats x_origin y_origin")
+    parser.add_argument("--theta_range", type=float, nargs=2,
+                        help="2 floats theta_min theta_max")
+    parser.add_argument("--keepxml", type=bool,
                         help="Do we keep the xml? Default is no.")
-    parser.add_argument("--printxml", type=bool, \
+    parser.add_argument("--print_sdpb", type=bool,
                         help="Do we print the sdpb output? Default is no.")
 
     # --------------------------------------
@@ -190,37 +182,6 @@ if __name__ == "__main__":
     # Take the args as dictionary
     args = parser.parse_args().__dict__
 
-    Dsig = 0.518154
-    Deps = 1.41267
-    distance   = (0.002, 0.02)
-    theta0 = 0.969260330903202
-
-    if args['origin'] and not args['range']:
-        Dsig, Deps = args['origin']
-    if args['dist'] and not args['range']:
-        dist = float(args['dist'])
-        distance = (dist, 10*dist)
-    sig_min = Dsig - distance[0]
-    sig_max = Dsig + distance[0]
-    eps_min = Deps - distance[1]
-    eps_max = Deps + distance[1]
-    if args['range']:
-        sig_min, sig_max, eps_min, eps_max = args['range']
-    scaling_range = [sig_min, sig_max, eps_min, eps_max]
-
-    use_theta = False
-    if args['theta_range']:
-        use_theta = True
-        theta_min, theta_max = args['theta_range']
-    elif args['theta_dist']:
-        use_theta = True
-        theta_min = theta0 - args['theta_dist']
-        theta_max = theta0 + args['theta_dist']
-    theta_range = None
-    if use_theta:
-        theta_range = [theta_min, theta_max]
-
-
     # Params fed into sdpb
     sdpb_params = {'Lambda': 11, 'lmax': 20, 'nu_max': 8, 'precision': 400, 'maxIters': 500, 'threads':4}
 
@@ -228,7 +189,7 @@ if __name__ == "__main__":
     job_params = {'name':"untitled",
             'res':[1, 1], 'theta_res':1,
             'range': None, 'theta_range': None,
-            'keepxml':False, 'printxml':False,
+            'keepxml':False, 'print_sdpb':False, 'file':None,
             'mem':8, 'ndays':1,'queue':'shared'} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
@@ -245,47 +206,21 @@ if __name__ == "__main__":
     # In the case we are only submitting one job
     if not args['batches']:
             print "Using", sdpb_params
-            print "with", job_params
+            print "with", args
             submit_job(job_params, sdpb_params)
             exit(0)
 
     # In the case where we are submitting multiple jobs
+
     batches = args['batches']
-    res = job_params['res']
-    theta_res = job_params['theta_res']
+    f_in = None
+    if job_params["file"] is not None:
+        f_in = open(job_params["file"], "r")
 
-    print "Using", sdpb_params
+    generate_to_file(job_params, batches=batches, f_in=f_in)
 
-    if len(batches) == 1:
-        theta_bits = mkrange(theta_range[0], theta_range[1], batches+1)
-        theta_ranges = [[theta_bits[i+1], theta_bits[i]] for i in range(batches)]
-        for batch in range(batches):
-            job_params['name'] = "{}_{}-{}of{}".format(
-                                args["name"], batch + 1, batches)
-            job_params['theta_range'] = [theta_ranges[batch][0], theta_ranges[batch][1]]
-            job_params['theta_res']   = [theta_res/batches]
-            additional_info = " --res {} {}".format(res[0], res[1]) \
-                    +" --theta_res {}".format(theta_res/batches)\
-                    +" --range {} {} {} {}".format(\
-                    scaling_range[0], scaling_range[1], scaling_range[2], scaling_range[3])\
-                    +" --theta_range {} {}".format(\
-                    theta_ranges[batch][0], theta_ranges[batch][1])\
-                    +" -N {}_{}of{}".format(args["name"], batches)
-            os.system(cmd + additional_info)
-            print "submitted:\n {}".format(cmd + additional_info)
-
-    elif len(batches) == 2:
-        total_batches = batches[0] * batches[1]
-        sig_bits = mkrange(scaling_range[0], scaling_range[1], batches[0]+1)
-        eps_bits = mkrange(scaling_range[2], scaling_range[3], batches[1]+1)
-        sig_ranges = [[sig_bits[i], sig_bits[i+1]] for i in range(batches[0])]
-        eps_ranges = [[eps_bits[i], eps_bits[i+1]] for i in range(batches[1])]
-        for sig_batch in range(batches[0]):
-            for eps_batch in range(batches[1]):
-                job_params['name'] = "{}_{}-{}of{}".format(
-                                args["name"], sig_batch+1, eps_batch+1, total_batches)
-                job_params['range'] = [sig_ranges[sig_batch][0], sig_ranges[sig_batch][1],
-                                       eps_ranges[eps_batch][0], eps_ranges[eps_batch][1]]
-                job_params['res']   = [res[0]/batches[0], res[1]/batches[1]]
-                print "submitted job with", job_params
-                submit_job(job_params, sdpb_params)
+    for batch in range(batches):
+        job_params['name'] = "{}_{}of{}".format(args["name"], batch + 1, batches)
+        job_params['file'] = "scratch/{}".format(job_params['name'])
+        submit_job(job_params, sdpb_params)
+        print "submitted job {}".format(batch + 1)

@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import os
 import argparse
-
+from point_generator import generate_points, generate_from_file
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
@@ -23,14 +23,6 @@ nu_max = None
 name = None
 keepxml = None
 print_sdpb = None
-
-
-def mkrange(a, b, resolution):
-    if resolution == 1:
-        return np.array([0.5*(a+b)])
-    else:
-        return np.linspace(a, b, num=resolution)
-
 
 #
 @cached_function
@@ -149,11 +141,12 @@ def make_SDP(deltas, theta=None):
     return context.sumrule_to_SDP(norm, obj, pvms)
 
 
-def check(deltas, theta=None):
+def check(deltas, theta=None, f=None):
 
     prob=make_SDP(deltas, theta)
 
     xmlfile = os.path.join(scratchpath, name+".xml")
+    ckfile = os.path.join(scratchpath, name + ".ck")
     prob.write(xmlfile)
     sdpbargs = [sdpb, "-s", xmlfile] + sdpbparams
     out, err = Popen(sdpbargs, stdout=PIPE, stderr=PIPE).communicate()
@@ -162,6 +155,7 @@ def check(deltas, theta=None):
         print "An error occurred:"
         print "------------------------------------"
         print err
+        os.system("rm scratch/{}*.ck", name)
         exit(0)
     sol = re.compile(r'found ([^ ]+) feasible').search(out)
     if not sol:
@@ -169,6 +163,7 @@ def check(deltas, theta=None):
         print "The out file wasn't right"
         print "------------------------------------"
         print out
+        os.system("rm scratch/{}*.ck", name)
         exit(0)
     elif print_sdpb:
         print out
@@ -210,6 +205,10 @@ if __name__ == "__main__":
                         help="angular momentum cutoff")
     parser.add_argument("-nu", "--nu_max", type=int,
                         help="maximum number of poles")
+    parser.add_argument("-f", "--file", type=str,
+                        help="file to read in from")
+    parser.add_argument("--out_file", type=bool,
+                        help="write to a file?")
     parser.add_argument("--res", type=int, nargs=2,
                         help="number of sampling points along each axis")
     parser.add_argument("--theta_res", type=int,
@@ -224,6 +223,8 @@ if __name__ == "__main__":
                         help="2 floats x_origin y_origin")
     parser.add_argument("--theta_range", type=float, nargs=2,
                         help="2 floats theta_min theta_max")
+    parser.add_argument("-f_out", "--file", type=str,
+                        help="file to read points from")
     parser.add_argument("--keepxml", type=bool,
                         help="Do we keep the xml? Default is no.")
     parser.add_argument("--print_sdpb", type=bool,
@@ -249,19 +250,17 @@ if __name__ == "__main__":
     job_params = {'name':"untitled",
             'res':[1, 1], 'theta_res':1,
             'range': None, 'theta_range': None,
-            'keepxml':False, 'print_sdpb':False}
+            'keepxml':False, 'print_sdpb':False, 'file':False}
 
-    # Params specifying how sdpb will be used in the for-loop
-    job_params = {'name':"untitled",'res':[1, 1], 'dist':0.00,'range':None,\
-            'keepxml': False, 'print_sdpb':False}
-
+    # params fed into sdpb
     for key in sdpb_params.keys():
         if args[key]:
             sdpb_params[key] = args[key]
-        elif key not in ["precision", "maxIters", "keepxml"]:
+        elif key in ['Lambda', 'lmax', 'nu_max']:
             print "Warning, {} not specified. Using {} = {}.".format(\
                     key, key, sdpb_params[key])
 
+    # params characterizing the job
     for key in job_params.keys():
         if args[key]:
             job_params[key]=args[key]
@@ -270,37 +269,18 @@ if __name__ == "__main__":
     keepxml = job_params['keepxml']
     print_sdpb = job_params['print_sdpb']
 
-    Dsig = 0.518154
-    Deps = 1.41267
-    distance   = (0.002, 0.02)
-    theta0 = 0.969260330903202
+    # Decide whether we print to a file or just print out
+    f_out = None
+    if args['out_file']:
+        f_out = open("out_files/{}.out", name)
 
-    if args['origin'] and not args['range']:
-        Dsig, Deps = args['origin']
-    if args['dist'] and not args['range']:
-        dist = float(args['dist'])
-        distance = (dist, 10*dist)
-    sig_min = Dsig - distance[0]
-    sig_max = Dsig + distance[0]
-    eps_min = Deps - distance[1]
-    eps_max = Deps + distance[1]
-    if args['range']:
-        sig_min, sig_max, eps_min, eps_max = args['range']
-    scaling_range = [sig_min, sig_max, eps_min, eps_max]
-    res = job_params['res']
+    # Get the points to loop over:
+    if job_params['file'] is not None:
+        points = generate_from_file(job_params, job_params['file'], f_out)
+    else:
+        points = generate_points(job_params, f_out=f_out)
 
-    use_theta = False
-    if args['theta_range']:
-        use_theta = True
-        theta_min, theta_max = args['theta_range']
-    elif args['theta_dist']:
-        use_theta = True
-        theta_min = theta0 - args['theta_dist']
-        theta_max = theta0 + args['theta_dist']
-    theta_res = theta_range = None
-    if use_theta:
-        theta_range = [theta_min, theta_max]
-        theta_res = args['theta_res']
+
 
     Lambda = sdpb_params['Lambda']
     lmax = sdpb_params['lmax']
@@ -312,18 +292,12 @@ if __name__ == "__main__":
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
 
-    print "Using {}".format(sdpb_params)
-    print "with resolutions = ({}, {}), ".format(res[0], res[1]) \
-          + "Delta window = (({}, {}), ({}, {})), ".format(
-        sig_min, sig_max, eps_min, eps_max)
-    if use_theta:
-        print "use_theta window = ({}, {}), with resolution {}".format(
-            theta_min, theta_max, theta_res)
 
-    for delta_s in mkrange(sig_min, sig_max, res[0]):
-        for delta_e in mkrange(eps_min, eps_max, res[1]):
-            if use_theta:
-                for theta in mkrange(theta_min, theta_max, theta_res):
-                    check((delta_s, delta_e), theta=theta)
-            else:
-                check((delta_s, delta_e))
+    for point in points:
+        if len(point) == 2:
+            check((point[0], point[1]), f=f_out)
+        else:
+            check((point[0], point[1]), theta=point[2], f=f_out)
+
+    # make a clean method
+    os.system("rm scratch/{}*.ck", name)

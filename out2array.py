@@ -1,27 +1,19 @@
 import sys
 import re
 
-lines = sys.stdin.readlines()
+if __name__ == "__main__":
 
-inclusion = re.compile("is not excluded")
-number_data = re.compile("[\d]+.[\d]+")
-use_theta = False
+    inclusion = re.compile("is not excluded")
+    number_data = re.compile("[\d]+.[\d]+")
 
-sigmas = []
-epsilons = []
-thetas = []
+    points = []
+    for line in sys.stdin.readlines():
+        if inclusion.search(line) is not None:
+            data = number_data.findall(line)
+            points.append(map(lambda x: float(x), data))
 
-for line in lines:
-    if inclusion.search(line) is not None:
-        data = number_data.findall(line)
-        if len(data) > 2: use_theta = True
-        sigmas.append(float(data[0]))
-        epsilons.append(float(data[1]))
-        if use_theta:
-            thetas.append(float(data[2]))
+    output = "{}".format(points)
+    output = output.replace("[", "{")
+    output = output.replace("]", "}")
 
-
-print sigmas
-print epsilons
-if use_theta:
-    print thetas
+    print output
