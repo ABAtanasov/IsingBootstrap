@@ -4,4 +4,6 @@
 *.sh
 *.ck
 *.bk
+*.pyc
 *.idea/
+scratch/

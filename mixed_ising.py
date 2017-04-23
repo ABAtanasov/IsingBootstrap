@@ -205,10 +205,6 @@ if __name__ == "__main__":
                         help="angular momentum cutoff")
     parser.add_argument("-nu", "--nu_max", type=int,
                         help="maximum number of poles")
-    parser.add_argument("-f", "--file", type=str,
-                        help="file to read in from")
-    parser.add_argument("--out_file", type=bool,
-                        help="write to a file?")
     parser.add_argument("--res", type=int, nargs=2,
                         help="number of sampling points along each axis")
     parser.add_argument("--theta_res", type=int,
@@ -223,8 +219,10 @@ if __name__ == "__main__":
                         help="2 floats x_origin y_origin")
     parser.add_argument("--theta_range", type=float, nargs=2,
                         help="2 floats theta_min theta_max")
-    parser.add_argument("-f_out", "--file", type=str,
+    parser.add_argument("--in_file", type=str,
                         help="file to read points from")
+    parser.add_argument("--out_file", type=bool,
+                        help="do we print out to a file?")
     parser.add_argument("--keepxml", type=bool,
                         help="Do we keep the xml? Default is no.")
     parser.add_argument("--print_sdpb", type=bool,
@@ -250,7 +248,10 @@ if __name__ == "__main__":
     job_params = {'name':"untitled",
             'res':[1, 1], 'theta_res':1,
             'range': None, 'theta_range': None,
-            'keepxml':False, 'print_sdpb':False, 'file':False}
+            'dist': None, 'theta_dist':None,
+            'origin': None,
+            'keepxml':False, 'print_sdpb':False,
+            'out_file':False, 'in_file': None}
 
     # params fed into sdpb
     for key in sdpb_params.keys():
@@ -271,12 +272,12 @@ if __name__ == "__main__":
 
     # Decide whether we print to a file or just print out
     f_out = None
-    if args['out_file']:
+    if job_params['out_file']:
         f_out = open("out_files/{}.out", name)
 
     # Get the points to loop over:
-    if job_params['file'] is not None:
-        points = generate_from_file(job_params, job_params['file'], f_out)
+    if job_params['in_file'] is not None:
+        points = generate_from_file(job_params, job_params['in_file'], f_out)
     else:
         points = generate_points(job_params, f_out=f_out)
 
@@ -299,5 +300,4 @@ if __name__ == "__main__":
         else:
             check((point[0], point[1]), theta=point[2], f=f_out)
 
-    # make a clean method
-    os.system("rm scratch/{}*.ck", name)
+    # make a 'clean' method at the end, to remove possibly lurking .ck files

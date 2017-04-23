@@ -33,29 +33,15 @@ def submit_job(job_params, sdpb_params):
     precision = sdpb_params['precision']
     maxIters  = sdpb_params['maxIters']
     threads   = job_params['threads']
-
-    range     = job_params['range']
-    theta_range = job_params['theta_range']
-    res       = job_params['res']
-    theta_res = job_params['theta_res']
+    in_file   = job_params['file']
     keepxml   = job_params['keepxml']
-    print_sdpb  = job_params['print_sdpbl']
+    print_sdpb  = job_params['print_sdpb']
     mem       = job_params['mem']
     ndays     = job_params['ndays']
     queue     = job_params['queue']
 
-    scaling_info = theta_info = " "
-    if range:
-        scaling_info = "--range {} {} {} {} --res {} {} ".format(\
-                range[0], range[1], range[2], range[3], res[0], res[1])
-    if theta_range:
-        theta_info = "--theta_range {} {} --theta_res={} ".format(\
-                theta_range[0], theta_range[1], theta_res)
-
-    cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} --print_sdpb={} --maxIters={} ".format(\
-            name, Lambda, lmax, nu_max, precision, keepxml, print_sdpb, maxIters)\
-            + scaling_info\
-            + theta_info\
+    cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} --print_sdpb={} --maxIters={} --in_file={} ".format(\
+            name, Lambda, lmax, nu_max, precision, keepxml, print_sdpb, maxIters, in_file)\
             + "--threads={} ".format(threads)
 
 
@@ -189,8 +175,9 @@ if __name__ == "__main__":
     job_params = {'name':"untitled",
             'res':[1, 1], 'theta_res':1,
             'range': None, 'theta_range': None,
+            'dist':None, 'theta_dist':None, 'origin':None,
             'keepxml':False, 'print_sdpb':False, 'file':None,
-            'mem':8, 'ndays':1,'queue':'shared'} # This last option is cluster-dependent
+            'mem':8, 'ndays':1,'queue':'shared', 'threads':4} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
         if args[key]:
@@ -205,8 +192,7 @@ if __name__ == "__main__":
 
     # In the case we are only submitting one job
     if not args['batches']:
-            print "Using", sdpb_params
-            print "with", args
+            generate_to_file(job_params)
             submit_job(job_params, sdpb_params)
             exit(0)
 
