@@ -40,10 +40,14 @@ def submit_job(job_params, sdpb_params):
     ndays     = job_params['ndays']
     queue     = job_params['queue']
 
-    cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --keepxml={} --print_sdpb={} --maxIters={} --in_file={} ".format(\
-            name, Lambda, lmax, nu_max, precision, keepxml, print_sdpb, maxIters, in_file)\
-            + "--threads={} ".format(threads)
-
+    cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --maxIters={} ".format(\
+            name, Lambda, lmax, nu_max, precision, maxIters, keepxml)\
+            + "--threads={} ".format(threads)\
+            + "--in_file={} --out_file=True ".format(in_file)
+    if print_sdpb:
+        cmd = cmd + "--print_sdpb=True "
+    if keepxml:
+        cmd = cmd + "--keepxml=True "
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
     bsubpath = os.path.join(mainpath, "bash_scripts")
@@ -110,7 +114,7 @@ if __name__ == "__main__":
     # --------------------------------------
     # Args for submit.py
     # --------------------------------------
-    parser.add_argument("-B", "--batches", type=int, nargs='+', \
+    parser.add_argument("-B", "--batches", type=int, \
             help="info for how jobs are submitted into batches")
 
     # --------------------------------------
@@ -193,6 +197,8 @@ if __name__ == "__main__":
     # In the case we are only submitting one job
     if not args['batches']:
             generate_to_file(job_params)
+            job_params["name"] = "{}_1of1".format(args['name'])
+            job_params["file"] = "scratch/{}.pts".format(job_params['name'])
             submit_job(job_params, sdpb_params)
             exit(0)
 
@@ -207,6 +213,7 @@ if __name__ == "__main__":
 
     for batch in range(batches):
         job_params['name'] = "{}_{}of{}".format(args["name"], batch + 1, batches)
-        job_params['file'] = "scratch/{}".format(job_params['name'])
+        job_params['file'] = "scratch/{}.pts".format(job_params['name'])
         submit_job(job_params, sdpb_params)
         print "submitted job {}".format(batch + 1)
+

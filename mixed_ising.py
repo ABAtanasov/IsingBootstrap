@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import os
 import argparse
-from point_generator import generate_points, generate_from_file
+from point_generator import generate_points, generate_from_file, print_out
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
@@ -151,30 +151,30 @@ def check(deltas, theta=None, f=None):
     sdpbargs = [sdpb, "-s", xmlfile] + sdpbparams
     out, err = Popen(sdpbargs, stdout=PIPE, stderr=PIPE).communicate()
     if err:
-        print "------------------------------------"
-        print "An error occurred:"
-        print "------------------------------------"
-        print err
+        print_out("------------------------------------", f=f)
+        print_out("An error occurred:", f=f)
+        print_out("------------------------------------", f=f)
+        print_out(err, f=f)
         os.system("rm scratch/{}*.ck", name)
         exit(0)
     sol = re.compile(r'found ([^ ]+) feasible').search(out)
     if not sol:
-        print "------------------------------------"
-        print "The out file wasn't right"
-        print "------------------------------------"
-        print out
+        print_out("------------------------------------", f=f)
+        print_out("The out file wasn't right", f=f)
+        print_out("------------------------------------", f=f)
+        print_out(out, f=f)
         os.system("rm scratch/{}*.ck", name)
         exit(0)
     elif print_sdpb:
-        print out
+        print_out(out, f=f)
 
     sol = sol.groups()[0]
     if sol == "dual":
-        print "({}, {}) is excluded."\
-            .format(deltas[0], deltas[1])
+        print_out("({}, {}) is excluded."\
+            .format(deltas[0], deltas[1]), f=f)
     elif sol == "primal":
-        print "({}, {}) is not excluded."\
-            .format(deltas[0], deltas[1])
+        print_out("({}, {}) is not excluded."\
+            .format(deltas[0], deltas[1]), f=f)
     else:
         raise RuntimeError
     if not keepxml:
@@ -223,9 +223,9 @@ if __name__ == "__main__":
                         help="file to read points from")
     parser.add_argument("--out_file", type=bool,
                         help="do we print out to a file?")
-    parser.add_argument("--keepxml", type=bool,
+    parser.add_argument("--keepxml",
                         help="Do we keep the xml? Default is no.")
-    parser.add_argument("--print_sdpb", type=bool,
+    parser.add_argument("--print_sdpb",
                         help="Do we print the sdpb output? Default is no.")
 
     # --------------------------------------
@@ -273,11 +273,12 @@ if __name__ == "__main__":
     # Decide whether we print to a file or just print out
     f_out = None
     if job_params['out_file']:
-        f_out = open("out_files/{}.out", name)
+        f_out = open("out_files/{}.out".format(name), 'w')
 
     # Get the points to loop over:
     if job_params['in_file'] is not None:
-        points = generate_from_file(job_params, job_params['in_file'], f_out)
+        f_in = open(job_params['in_file'], 'r')
+        points = generate_from_file(job_params, f_in=f_in, f_out=f_out)
     else:
         points = generate_points(job_params, f_out=f_out)
 

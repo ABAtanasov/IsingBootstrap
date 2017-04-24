@@ -22,6 +22,7 @@ def mkrange(a, b, resolution):
 def print_out(string, f=None):
     if f is not None:
         f.write(string)
+        f.write("\n")
     else:
         print string
 
@@ -89,14 +90,16 @@ def generate_from_file(params, f_in, f_out):
     print_out("Using {}".format(params), f=f_out)
     print_out("from file {}".format(f_in.name), f=f_out)
 
-    number_data = re.compile("[\d]+.[\d]+")
+    number_data = re.compile("[\d]+.[\d]*")
     points = []
 
     # The following gives the list of points contained in the file
     for line in f_in:
         data = number_data.findall(line)
-        points.append(map(lambda x: float(x), data))
+        if data:
+            points.append(map(lambda x: float(x), data))
 
+    return points
 
 def generate_to_file(params, batches=1, f_in=None):
 
@@ -113,3 +116,4 @@ def generate_to_file(params, batches=1, f_in=None):
             f_new.write("{}\n".format(point))
 
         f_new.close()
+
