@@ -123,7 +123,7 @@ def make_SDP(deltas, theta=None):
     sigma_contribution=make_F(deltas,"odd+",0,{},Delta=deltas[0])
     for m,x in zip(epsilon_contribution,sigma_contribution):
         m[0][0]+=x
-    if theta:
+    if theta is not None:
         V = epsilon_contribution
         constraint = []
         sn = np.sin(theta)
@@ -169,14 +169,24 @@ def check(deltas, theta=None, f=None):
         print_out(out, f=f)
 
     sol = sol.groups()[0]
-    if sol == "dual":
-        print_out("({}, {}) is excluded."\
-            .format(deltas[0], deltas[1]), f=f)
-    elif sol == "primal":
-        print_out("({}, {}) is not excluded."\
-            .format(deltas[0], deltas[1]), f=f)
+    if theta is not None:
+        if sol == "dual":
+            print_out("({}, {}, {}) is excluded."\
+                .format(deltas[0], deltas[1], theta), f=f)
+        elif sol == "primal":
+            print_out("({}, {}, {}) is not excluded."\
+                .format(deltas[0], deltas[1], theta), f=f)
+        else:
+            raise RuntimeError
     else:
-        raise RuntimeError
+       if sol == "dual":
+            print_out("({}, {}) is excluded."\
+                .format(deltas[0], deltas[1]), f=f)
+        elif sol == "primal":
+            print_out("({}, {}) is not excluded."\
+                .format(deltas[0], deltas[1]), f=f)
+        else:
+            raise RuntimeError
     if not keepxml:
         os.remove(xmlfile)
 
