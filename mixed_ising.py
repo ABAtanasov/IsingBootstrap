@@ -1,3 +1,15 @@
+# -----------------------------------------------------------------
+# mixed_ising.py
+#
+# This module uses sage to build the conformal block tables to be
+# fed into sdpb, as well as all other relevant sdpb parameters
+#
+# Depending on the params fed in, this either reads from an in_file
+# or constructs the set of points to loop over by using
+# point_generator.py
+#
+# -----------------------------------------------------------------
+
 import sage.cboot as cb
 from sage.misc.cachefunc import cached_function
 from subprocess import Popen, PIPE

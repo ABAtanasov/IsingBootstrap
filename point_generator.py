@@ -1,10 +1,14 @@
+# -----------------------------------------------------------------
+# point_generator.py
+# 
+# -----------------------------------------------------------------
+
 import numpy as np
 import os
 import re
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
-
 
 # --------------------------------------------------------
 # Makes a numpy array from a to b with a given resolution
@@ -26,6 +30,12 @@ def print_out(string, f=None):
     else:
         print string
 
+# --------------------------------------------------------
+# If f_in is specified, generates the points from that
+# in_file
+#
+# Otherwise, uses params to construct the correct loop
+# --------------------------------------------------------
 def generate_points(params, f_in=None, f_out=None):
 
     if f_in is not None:
@@ -84,7 +94,11 @@ def generate_points(params, f_in=None, f_out=None):
 
     return points
 
-
+# --------------------------------------------------------
+# Given an in_file, prints the params to an out_file
+# (or stdout by default), and returns the list of points
+# contained in that file
+# --------------------------------------------------------
 def generate_from_file(params, f_in, f_out):
 
     print_out("Using {}".format(params), f=f_out)
@@ -101,6 +115,19 @@ def generate_from_file(params, f_in, f_out):
 
     return points
 
+# --------------------------------------------------------
+# Generates a set of points, either from params or an
+# in_file, to and prints these to an out_file
+# corresponding to the name of the job
+#
+# If multiple batches are specified, this divides the
+# points into equal batches to be written to seperate
+# files, one for each job that will be called, and
+# labelled in the form:
+#
+#        <name>_<batch #>of<total batches>.pts
+#
+# --------------------------------------------------------
 def generate_to_file(params, batches=1, f_in=None):
 
     points = generate_points(params, f_in=f_in)
