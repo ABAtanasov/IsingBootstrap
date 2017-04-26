@@ -64,7 +64,7 @@ def submit_job(job_params, sdpb_params):
     jobfile = write_jobfile(cmd, name, paths,\
             mem = mem, ndays = ndays, threads = threads, queue = queue)
 
-    os.system("bsub < " + jobfile)
+    os.system("sbatch < {}".format(jobfile))
 
     print "submitted:\n  {}".format(cmd)
 
@@ -74,25 +74,26 @@ def submit_job(job_params, sdpb_params):
 # and returns a link to that file inside bash_scripts/
 # --------------------------------------------------------
 def write_jobfile(cmd, jobname, paths,
-                  nodes=10, threads=1, gpus=0, mem=8, ndays=1, queue='shared'):
+                  nodes=10, threads=1, gpus=0, mem=8, ndays=1, queue='day'):
 
-    exp_threads = 'export OMP_NUM_THREADS={}\n'.format(threads)
+    days = '{}'.format(int(ndays))
+    if len(days) == 1:
+        days = '0'+ days
 
     jobfile = os.path.join(paths["sh_scripts"], jobname + '.sh')
 
     with open(jobfile, 'w') as f:
         f.write('#! /bin/bash\n'
             + '\n'
-            #+ '#BSUB -l nodes={}:ppn={}\n'.format(nodes, ppn)
-            + '#BSUB -M {}\n'.format(int(mem)*1000)          #good
-            + '#BSUB -W {}:00\n'.format(24*int(ndays))       #good
-            + '#BSUB -n {}\n'.format(threads)
-            + '#BSUB -q {}\n'.format(queue)
-            + '#BSUB -J {}\n'.format(jobname)                #good
-            + '#BSUB -e {}/{}.e%J\n'.format(paths["scratch"], jobname)
-            + '#BSUB -o {}/{}.o%J\n'.format(paths["scratch"], jobname)
+            + '#SBATCH --job-name={}\n'.format(jobname)
+            + '#SBATCH --partition={}\n'.format(queue)
+            + '#SBATCH --mem-per-cpu={}\n'.format(int(mem)*1000)
+            + '#SBATCH --time={}-00:00:00\n'.format(days)
+            + '#SBATCH --cpus-per-task={}\n'.format(threads)
+            + '#SBATCH --ntasks=1\n'
+            + '#SBATCH --output={}/{}-%j.out'.format(paths['scratch'], jobname)
             + '\n'
-            + exp_threads                                    #good
+            + 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n'
             + '. ~/.bashrc\n'
             + '{} 2>&1\n'.format(cmd)
             + '\n'
@@ -163,7 +164,7 @@ if __name__ == "__main__":
     # Args for the cluster
     # --------------------------------------
     parser.add_argument("--mem", type = int,\
-            help="maximum memory allocated per node in cluster")
+            help="maximum memory in GB allocated per node in cluster")
     parser.add_argument("--ndays", type = int,\
             help="number of days to run process on cluster")
     parser.add_argument("-q", "--queue", type = str,\
@@ -181,7 +182,7 @@ if __name__ == "__main__":
             'range': None, 'theta_range': None,
             'dist':None, 'theta_dist':None, 'origin':None,
             'keepxml':False, 'print_sdpb':False, 'file':None,
-            'mem':8, 'ndays':1,'queue':'shared', 'threads':4} # This last option is cluster-dependent
+            'mem':8, 'ndays':1,'queue':'day', 'threads':4} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
         if args[key]:
