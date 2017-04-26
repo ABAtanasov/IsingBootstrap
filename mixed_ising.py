@@ -191,7 +191,7 @@ def check(deltas, theta=None, f=None):
         else:
             raise RuntimeError
     else:
-       if sol == "dual":
+        if sol == "dual":
             print_out("({}, {}) is excluded."\
                 .format(deltas[0], deltas[1]), f=f)
         elif sol == "primal":
