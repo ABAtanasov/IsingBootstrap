@@ -315,12 +315,19 @@ if __name__ == "__main__":
     sdpbparams.append("--maxIterations={}".format(sdpb_params['maxIters']))
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
-
+    f_out.close()
 
     for point in points:
-        if len(point) == 2:
-            check((point[0], point[1]), f=f_out)
+        if job_params['out_file']:
+            with open("out_files/{}.out".format(name), 'w') as f:
+                if len(point) == 2:
+                    check((point[0], point[1]), f=f)
+                else:
+                    check((point[0], point[1]), theta=point[2], f=f)
         else:
-            check((point[0], point[1]), theta=point[2], f=f_out)
+            if len(point) == 2:
+                check((point[0], point[1]))
+            else:
+                check((point[0], point[1]), theta=point[2])
 
     # make a 'clean' method at the end, to remove possibly lurking .ck files
