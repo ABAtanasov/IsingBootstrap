@@ -18,6 +18,7 @@ import numpy as np
 import sys
 import os
 import argparse
+import time
 from point_generator import generate_points, generate_from_file, print_out
 
 mainpath = os.path.dirname(__file__)
@@ -315,19 +316,17 @@ if __name__ == "__main__":
     sdpbparams.append("--maxIterations={}".format(sdpb_params['maxIters']))
 
     context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
-    f_out.close()
 
     for point in points:
-        if job_params['out_file']:
-            with open("out_files/{}.out".format(name), 'w') as f:
-                if len(point) == 2:
-                    check((point[0], point[1]), f=f)
-                else:
-                    check((point[0], point[1]), theta=point[2], f=f)
+        if len(point) == 2:
+            check((point[0], point[1]))
         else:
-            if len(point) == 2:
-                check((point[0], point[1]))
-            else:
-                check((point[0], point[1]), theta=point[2])
+            check((point[0], point[1]), theta=point[2])
+        if f_out is not None:
+            f_out.flush()
+            time.sleep(4)
+
+    if f_out is not None:
+        f_out.close()
 
     # make a 'clean' method at the end, to remove possibly lurking .ck files
