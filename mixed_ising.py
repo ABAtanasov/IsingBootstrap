@@ -319,9 +319,9 @@ if __name__ == "__main__":
 
     for point in points:
         if len(point) == 2:
-            check((point[0], point[1]))
+            check((point[0], point[1]), f=f_out)
         else:
-            check((point[0], point[1]), theta=point[2])
+            check((point[0], point[1]), theta=point[2], f=f_out)
         if f_out is not None:
             f_out.flush()
             time.sleep(4)
