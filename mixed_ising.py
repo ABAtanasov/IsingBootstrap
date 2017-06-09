@@ -305,8 +305,6 @@ if __name__ == "__main__":
     else:
         points = generate_points(job_params, f_out=f_out)
 
-
-
     Lambda = sdpb_params['Lambda']
     lmax = sdpb_params['lmax']
     nu_max = sdpb_params['nu_max']
