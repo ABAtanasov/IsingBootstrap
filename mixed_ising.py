@@ -36,106 +36,121 @@ nu_max = None
 name = None
 keepxml = None
 print_sdpb = None
+profile = None
 
-#
+
+def print_err(message, dumpfile, f=None):
+    print_out("------------------------------------", f=f)
+    print_out(message, f=f)
+    print_out("------------------------------------", f=f)
+    print_out(dumpfile, f=f)
+
+
+def write_update(f_out):
+    if f_out is not None:
+        f_out.flush()
+        time.sleep(4)
+
+
 @cached_function
-def prepare_g_0(spin,Delta=None):
-    return context.approx_cb(nu_max,spin)
+def prepare_g_0(spin, Delta=None):
+    return context.approx_cb(nu_max, spin)
 
 
 # g_\Delta l
 @cached_function
-def prepare_g_se(spin,Delta_se,Delta=None):
-    g_se=context.approx_cb(nu_max,spin,Delta_1_2=Delta_se,Delta_3_4=Delta_se)
+def prepare_g_se(spin, Delta_se, Delta=None):
+    g_se = context.approx_cb(nu_max, spin, Delta_1_2=Delta_se, Delta_3_4=Delta_se)
     return g_se
 
 
 @cached_function
-def prepare_g_es(spin,Delta_se,Delta=None):
-    g_es=context.approx_cb(nu_max,spin,Delta_1_2=-Delta_se,Delta_3_4=Delta_se)
+def prepare_g_es(spin, Delta_se, Delta=None):
+    g_es = context.approx_cb(nu_max, spin, Delta_1_2=-Delta_se, Delta_3_4=Delta_se)
     return g_es
 
 
-def prepare_g(spin,Delta_se,Delta=None):
-    if Delta==None:
+def prepare_g(spin, Delta_se, Delta=None):
+    if Delta == None:
         return (prepare_g_0(spin),
-                prepare_g_se(spin,Delta_se),
-                prepare_g_es(spin,Delta_se))
+                prepare_g_se(spin, Delta_se),
+                prepare_g_es(spin, Delta_se))
     else:
-        g_0=context.gBlock(spin,Delta,0,0)
-        if not (Delta==0 and spin==0):
-            g_se=context.gBlock(spin,Delta,Delta_se,Delta_se)
-            g_es=context.gBlock(spin,Delta,-Delta_se,Delta_se)
+        g_0 = context.gBlock(spin, Delta, 0, 0)
+        if not (Delta == 0 and spin == 0):
+            g_se = context.gBlock(spin, Delta, Delta_se, Delta_se)
+            g_es = context.gBlock(spin, Delta, -Delta_se, Delta_se)
         else:
-            g_se=None
-            g_es=None
-        return (g_0,g_se,g_es)
+            g_se = None
+            g_es = None
+        return (g_0, g_se, g_es)
 
 
-def make_F(deltas,sector,spin,gap_dict,Delta=None):
-    delta_s=context(deltas[0])
-    delta_e=context(deltas[1])
-    Delta_se=delta_s-delta_e
-    if Delta==None:
+def make_F(deltas, sector, spin, gap_dict, Delta=None):
+    delta_s = context(deltas[0])
+    delta_e = context(deltas[1])
+    Delta_se = delta_s-delta_e
+    if Delta == None:
         try:
-            shift=context(gap_dict[(sector,spin)])
+            shift=context(gap_dict[(sector, spin)])
         except KeyError:
-            if spin==0:
-                shift=context.epsilon
+            if spin == 0:
+                shift = context.epsilon
             else:
-                shift=2*context.epsilon+spin
-        gs=[x.shift(shift) for x in prepare_g(spin,Delta_se,Delta=Delta)]
+                shift = 2*context.epsilon + spin
+        gs = [x.shift(shift) for x in prepare_g(spin, Delta_se, Delta=Delta)]
     else:
-        gs=prepare_g(spin,Delta_se,Delta=Delta)
+        gs = prepare_g(spin, Delta_se, Delta=Delta)
 
-    if sector=="even":
-        F_s_s=context.dot(context.F_minus_matrix(delta_s),gs[0])
-        F_e_e=context.dot(context.F_minus_matrix(delta_e),gs[0])
+    if sector == "even":
+        F_s_s = context.dot(context.F_minus_matrix(delta_s), gs[0])
+        F_e_e = context.dot(context.F_minus_matrix(delta_e), gs[0])
 
-        F_s_e=context.dot(context.F_minus_matrix((delta_s+delta_e)/2),gs[0])
-        H_s_e=context.dot(context.F_plus_matrix((delta_s+delta_e)/2),gs[0])
-        return [[[F_s_s,0],
-                   [0,0]],
-                  [[0,0],
-                  [0,F_e_e]],
-                  [[0,0],
-                   [0,0]],
-                  [[0,F_s_e/2],
-                   [F_s_e/2,0]],
-                  [[0,H_s_e/2],
-                   [H_s_e/2,0]]]
+        F_s_e = context.dot(context.F_minus_matrix((delta_s+delta_e)/2), gs[0])
+        H_s_e = context.dot(context.F_plus_matrix((delta_s+delta_e)/2), gs[0])
+        return [[[F_s_s, 0],
+                 [0, 0]],
+                [[0, 0],
+                 [0, F_e_e]],
+                [[0, 0],
+                 [0, 0]],
+                [[0, F_s_e/2],
+                 [F_s_e/2, 0]],
+                [[0, H_s_e/2],
+                 [H_s_e/2, 0]]]
 
-    elif sector=="odd+":
-        F_s_e=context.dot(context.F_minus_matrix((delta_s+delta_e)/2),gs[1])
-        F_e_s=context.dot(context.F_minus_matrix(delta_s),gs[2])
-        H_e_s=context.dot(context.F_plus_matrix(delta_s),gs[2])
+    elif sector == "odd+":
+        F_s_e = context.dot(context.F_minus_matrix((delta_s+delta_e)/2), gs[1])
+        F_e_s = context.dot(context.F_minus_matrix(delta_s), gs[2])
+        H_e_s = context.dot(context.F_plus_matrix(delta_s), gs[2])
 
-        return [0,0,F_s_e,F_e_s,-H_e_s]
+        return [0, 0, F_s_e, F_e_s, -H_e_s]
 
-    elif sector=="odd-":
-        F_s_e=context.dot(context.F_minus_matrix((delta_s+delta_e)/2),gs[1])
-        F_e_s=context.dot(context.F_minus_matrix(delta_s),gs[2])
-        H_e_s=context.dot(context.F_plus_matrix(delta_s),gs[2])
+    elif sector == "odd-":
+        F_s_e = context.dot(context.F_minus_matrix((delta_s+delta_e)/2), gs[1])
+        F_e_s = context.dot(context.F_minus_matrix(delta_s), gs[2])
+        H_e_s = context.dot(context.F_plus_matrix(delta_s), gs[2])
 
-        return [0,0,-F_s_e,F_e_s,-H_e_s]
-    else: raise RuntimeError("unknown sector name")
+        return [0, 0, -F_s_e, F_e_s, -H_e_s]
+    else:
+        raise RuntimeError("unknown sector name")
 
 
 def make_SDP(deltas, theta=None):
 
-    pvms=[]
-    gaps={("even",0):3,("odd+",0):3}
-    for spin in range(0,lmax):
-        if not spin%2:
-            pvms.append(make_F(deltas,"even",spin,gaps))
-            pvms.append(make_F(deltas,"odd+",spin,gaps))
+    pvms = []
+    gaps = {("even", 0): 3, ("odd+", 0): 3}
+    for spin in range(0, lmax):
+        if not spin % 2:
+            pvms.append(make_F(deltas, "even", spin, gaps))
+            pvms.append(make_F(deltas, "odd+", spin, gaps))
         else:
-            pvms.append(make_F(deltas,"odd-",spin,gaps))
+            pvms.append(make_F(deltas, "odd-", spin, gaps))
 
-    epsilon_contribution=make_F(deltas,"even",0,{},Delta=deltas[1])
-    sigma_contribution=make_F(deltas,"odd+",0,{},Delta=deltas[0])
-    for m,x in zip(epsilon_contribution,sigma_contribution):
-        m[0][0]+=x
+    epsilon_contribution = make_F(deltas, "even", 0, {}, Delta=deltas[1])
+    sigma_contribution = make_F(deltas, "odd+", 0, {}, Delta=deltas[0])
+    for m, x in zip(epsilon_contribution, sigma_contribution):
+        m[0][0] += x
     if theta is not None:
         V = epsilon_contribution
         constraint = []
@@ -147,61 +162,73 @@ def make_SDP(deltas, theta=None):
         pvms.append(constraint)
     else:
         pvms.append(epsilon_contribution)
-    norm=[]
-    for v in make_F(deltas,"even",0,{},Delta=0):
+    norm = []
+    for v in make_F(deltas, "even", 0, {}, Delta=0):
         norm.append(v[0][0]+v[0][1]+v[1][0]+v[1][1])
-    obj=0
+    obj = 0
     return context.sumrule_to_SDP(norm, obj, pvms)
 
 
 def check(deltas, theta=None, f=None):
 
-    prob=make_SDP(deltas, theta)
+    start = time.time()
+    prob = make_SDP(deltas, theta)
+    end = time.time()
+    cboot_duration = end - start
 
-    xmlfile = os.path.join(scratchpath, name+".xml")
-    ckfile = os.path.join(scratchpath, name + ".ck")
+    xmlfile = os.path.join(scratchpath, name + ".xml")
+    # ckfile = os.path.join(scratchpath, name + ".ck")
     prob.write(xmlfile)
     sdpbargs = [sdpb, "-s", xmlfile] + sdpbparams
+
+    start = time.time()
     out, err = Popen(sdpbargs, stdout=PIPE, stderr=PIPE).communicate()
+    end = time.time()
+    sdpb_duration = end - start
+
     if err:
-        print_out("------------------------------------", f=f)
-        print_out("An error occurred:", f=f)
-        print_out("------------------------------------", f=f)
-        print_out(err, f=f)
-        os.system("rm scratch/{}*.ck", name)
-        exit(0)
+        print_err("An error occurred: ", err, f=f)
+        os.system("rm scratch/{}.ck".format(name))
+        return
     sol = re.compile(r'found ([^ ]+) feasible').search(out)
     if not sol:
-        print_out("------------------------------------", f=f)
-        print_out("The out file wasn't right", f=f)
-        print_out("------------------------------------", f=f)
-        print_out(out, f=f)
-        os.system("rm scratch/{}*.ck", name)
-        exit(0)
+        print_err("The out file wasn't right: ", out, f=f)
+        os.system("rm scratch/{}.ck".format(name))
+        return
     elif print_sdpb:
         print_out(out, f=f)
 
     sol = sol.groups()[0]
     if theta is not None:
         if sol == "dual":
-            print_out("({}, {}, {}) is excluded."\
-                .format(deltas[0], deltas[1], theta), f=f)
+            message = "({}, {}, {}) is excluded.".format(deltas[0], deltas[1], theta)
+            excluded = True
         elif sol == "primal":
-            print_out("({}, {}, {}) is not excluded."\
-                .format(deltas[0], deltas[1], theta), f=f)
+            message = "({}, {}, {}) is not excluded.".format(deltas[0], deltas[1], theta)
+            excluded = False
         else:
             raise RuntimeError
     else:
         if sol == "dual":
-            print_out("({}, {}) is excluded."\
-                .format(deltas[0], deltas[1]), f=f)
+            message = "({}, {}) is excluded.".format(deltas[0], deltas[1])
+            excluded = True
         elif sol == "primal":
-            print_out("({}, {}) is not excluded."\
-                .format(deltas[0], deltas[1]), f=f)
+            message = "({}, {}) is not excluded.".format(deltas[0], deltas[1])
+            excluded = False
         else:
             raise RuntimeError
+
+    if profile:
+        message += "cboot_duration = {}, sdpb_duration = {}".format(cboot_duration, sdpb_duration)
+
+    print_out(message, f)
+
     if not keepxml:
         os.remove(xmlfile)
+
+    write_update(f_out)
+
+    return excluded
 
 if __name__ == "__main__":
 
@@ -250,6 +277,10 @@ if __name__ == "__main__":
                         help="Do we keep the xml? Default is no.")
     parser.add_argument("--print_sdpb",
                         help="Do we print the sdpb output? Default is no.")
+    parser.add_argument("--profile",
+                        help="Do we profile the time taken? Default is no.")
+    parser.add_argument("--envelope",
+                        help="Option to use the \'envelope\' method of attack for theta scan")
 
     # --------------------------------------
     # Args for sdpb
@@ -266,34 +297,34 @@ if __name__ == "__main__":
     # Params fed into sdpb
     sdpb_params = {'Lambda': 11, 'lmax': 20, 'nu_max': 8, 'precision': 400, 'maxIters': 500, 'threads': 4}
 
-
     # Params fed into the cluster/mixed_ising
-    job_params = {'name':"untitled",
-            'res':[1, 1], 'theta_res':1,
-            'range': None, 'theta_range': None,
-            'dist': None, 'theta_dist':None,
-            'origin': None,
-            'keepxml':False, 'print_sdpb':False,
-            'out_file':False, 'in_file': None}
+    job_params = {'name': "untitled",
+                  'res': [1, 1], 'theta_res': 1,
+                  'range': None, 'theta_range': None,
+                  'dist': None, 'theta_dist': None,
+                  'origin': None,
+                  'keepxml': False, 'print_sdpb': False, 'profile': False, 'envelope': False,
+                  'out_file': False, 'in_file': None}
 
     # params fed into sdpb
     for key in sdpb_params.keys():
         if args[key]:
             sdpb_params[key] = args[key]
         elif key in ['Lambda', 'lmax', 'nu_max']:
-            print "Warning, {} not specified. Using {} = {}.".format(\
-                    key, key, sdpb_params[key])
+            print "Warning, {} not specified. Using {} = {}.".format(key, key, sdpb_params[key])
 
     # params characterizing the job
     for key in job_params.keys():
         if args[key]:
-            job_params[key]=args[key]
+            job_params[key] = args[key]
 
     name = job_params['name']
     keepxml = job_params['keepxml']
     print_sdpb = job_params['print_sdpb']
+    profile = job_params['profile']
+    envelope = job_params['envelope']
 
-    # Decide whether we print to a file or just print out
+    # Decide whether we print to a file or just print to STDOUT
     f_out = None
     if job_params['out_file']:
         f_out = open("out_files/{}.out".format(name), 'w')
@@ -313,16 +344,40 @@ if __name__ == "__main__":
     sdpbparams.append("--maxThreads={}".format(sdpb_params['threads']))
     sdpbparams.append("--maxIterations={}".format(sdpb_params['maxIters']))
 
-    context=cb.context_for_scalar(epsilon=0.5,Lambda=Lambda)
+    context = cb.context_for_scalar(epsilon=0.5, Lambda=Lambda)
 
-    for point in points:
-        if len(point) == 2:
+    if len(points[0]) == 2:
+        for point in points:
             check((point[0], point[1]), f=f_out)
-        else:
+
+    elif len(points[0]) == 3 and not envelope:
+        for point in points:
             check((point[0], point[1]), theta=point[2], f=f_out)
-        if f_out is not None:
-            f_out.flush()
-            time.sleep(4)
+
+    elif len(points[0]) == 3 and envelope:
+        base_points = dict()
+
+        # Build the dictionary:
+        for point in points:
+            base_point = (point[0], point[1])
+            theta = point[2]
+            entry = base_points.get(base_point)
+            if entry is None:
+                base_points[base_point] = [theta]
+            else:
+                base_points[base_point].append(theta)
+
+        for base_point, thetas in base_points.iteritems():
+            thetas.sort()
+            # Go down from the top until something isn't excluded
+            above = len(thetas)
+            for above in range(len(thetas), 0, -1):
+                if not check(base_point, theta=thetas[above], f=f_out):
+                    break
+            # Go down until something isn't excluded
+            for below in range(0, above):
+                if not check(base_point, theta=thetas[below], f=f_out):
+                    break
 
     if f_out is not None:
         f_out.close()

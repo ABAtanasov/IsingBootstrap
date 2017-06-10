@@ -25,6 +25,7 @@ def mkdir_p(path):
 # everything for the cluster to run cboot and sdpb
 # --------------------------------------------------------
 def submit_job(job_params, sdpb_params):
+
     name      = job_params['name']
 
     Lambda    = sdpb_params['Lambda']
@@ -32,22 +33,28 @@ def submit_job(job_params, sdpb_params):
     nu_max    = sdpb_params['nu_max']
     precision = sdpb_params['precision']
     maxIters  = sdpb_params['maxIters']
+
     threads   = job_params['threads']
     in_file   = job_params['file']
-    keepxml   = job_params['keepxml']
-    print_sdpb  = job_params['print_sdpb']
     mem       = job_params['mem']
     ndays     = job_params['ndays']
     queue     = job_params['queue']
 
+    # Main command:
     cmd = "sage mixed_ising.py -N={} -L={} -l={} -nu={} -p={} --maxIters={} ".format(\
-            name, Lambda, lmax, nu_max, precision, maxIters, keepxml)\
+            name, Lambda, lmax, nu_max, precision, maxIters)\
             + "--threads={} ".format(threads)\
             + "--in_file={} --out_file=True ".format(in_file)
-    if print_sdpb:
-        cmd = cmd + "--print_sdpb=True "
-    if keepxml:
-        cmd = cmd + "--keepxml=True "
+
+    # Various boolean options:
+    if job_params['print_sdpb']:
+        cmd += "--print_sdpb=True "
+    if job_params['keepxml']:
+        cmd += "--keepxml=True "
+    if job_params['profile']:
+        cmd += "--profile=True "
+    if job_params['envelope']:
+        cmd += "--envelope=True "
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
     bsubpath = os.path.join(mainpath, "bash_scripts")
@@ -149,6 +156,11 @@ if __name__ == "__main__":
                         help="Do we keep the xml? Default is no.")
     parser.add_argument("--print_sdpb", type=bool,
                         help="Do we print the sdpb output? Default is no.")
+    parser.add_argument("--profile",
+                        help="Do we profile the time taken? Default is no.")
+    parser.add_argument("--envelope",
+                        help="Option to use the \'envelope\' method of attack for theta scan")
+
 
     # --------------------------------------
     # Args for sdpb
@@ -181,8 +193,9 @@ if __name__ == "__main__":
             'res':[1, 1], 'theta_res':1,
             'range': None, 'theta_range': None,
             'dist':None, 'theta_dist':None, 'origin':None,
-            'keepxml':False, 'print_sdpb':False, 'file':None,
-            'mem':8, 'ndays':1,'queue':'day', 'threads':4} # This last option is cluster-dependent
+            'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
+            'file':None,
+            'mem':8, 'ndays':1, 'threads':4, 'queue':'day'} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
         if args[key]:
