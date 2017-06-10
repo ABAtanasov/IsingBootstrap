@@ -104,7 +104,7 @@ def generate_from_file(params, f_in, f_out):
     print_out("Using {}".format(params), f=f_out)
     print_out("from file {}".format(f_in.name), f=f_out)
 
-    number_data = re.compile("[\d]+.[\d]*")
+    number_data = re.compile("-?[\d]+.[\d]*")
     points = []
 
     # The following gives the list of points contained in the file
