@@ -6,6 +6,7 @@
 import numpy as np
 import os
 import re
+from itertools import islice
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
@@ -21,6 +22,30 @@ def mkrange(a, b, resolution):
 
 
 # --------------------------------------------------------
+# Converts a (3D) array of points into a dict
+# of base points as keys and their theta-fibers as vals
+# --------------------------------------------------------
+def array2dict(points):
+    assert len(points) > 0 and len(points[0]) > 2
+    base_points = dict()
+    # Build the dictionary:
+    for point in points:
+        base_point = (point[0], point[1])
+        theta = point[2]
+        entry = base_points.get(base_point)
+        if entry is None:
+            base_points[base_point] = [theta]
+        else:
+            base_points[base_point].append(theta)
+
+    # Sort the dictionary
+    for thetas in base_points.values():
+        thetas.sort()
+
+    return base_points
+
+
+# --------------------------------------------------------
 # Prints to the file f or stdout if no f is specified
 # --------------------------------------------------------
 def print_out(string, f=None):
@@ -29,6 +54,7 @@ def print_out(string, f=None):
         f.write("\n")
     else:
         print string
+
 
 # --------------------------------------------------------
 # If f_in is specified, generates the points from that
@@ -132,15 +158,34 @@ def generate_to_file(params, batches=1, f_in=None):
 
     points = generate_points(params, f_in=f_in)
     name = params['name']
-    num_points = len(points)
 
-    for batch in range(batches):
+    assert len(points) > 0
+    if len(points[0]) == 2:
+        num_points = len(points)
+        for batch in range(batches):
+            f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
+            begin = (batch * num_points)/batches
+            end   = ((batch + 1) * num_points)/batches
+            for point in points[begin:end]:
+                f_new.write("{}\n".format(point))
+
+    elif len(points[0]) == 3:
+        base_points = array2dict(points)
+        num_points = len(base_points.keys())
+        batch = 0
+        point_num = 0
         f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
+        for base_point, thetas in base_points.iteritems():
+            for theta in thetas:
+                f_new.write("({}, {}, {})\n".format(base_point[0], base_point[1], theta))
+            point_num += 1
+            if point_num * batches >= num_points:
+                batch += 1
+                point_num = 0
+                f_new.close()
+                f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
 
-        begin = (batch * num_points)/batches
-        end   = ((batch + 1) * num_points)/batches
-        for point in points[begin:end]:
-            f_new.write("{}\n".format(point))
+    else:
+        raise RuntimeError
 
-        f_new.close()
-
+    f_new.close()

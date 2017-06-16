@@ -20,6 +20,7 @@ import os
 import argparse
 import time
 from point_generator import generate_points, generate_from_file, print_out
+from envelope_method import envelope
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
@@ -186,48 +187,47 @@ def check(deltas, theta=None, f=None):
     end = time.time()
     sdpb_duration = end - start
 
+    if print_sdpb:
+        print_out(out, f=f)
     if err:
         print_err("An error occurred: ", err, f=f)
         os.system("rm scratch/{}.ck".format(name))
         return
+
     sol = re.compile(r'found ([^ ]+) feasible').search(out)
     if not sol:
         print_err("The out file wasn't right: ", out, f=f)
         os.system("rm scratch/{}.ck".format(name))
         return
-    elif print_sdpb:
-        print_out(out, f=f)
-
     sol = sol.groups()[0]
+
     if theta is not None:
-        if sol == "dual":
-            message = "({}, {}, {}) is excluded.".format(deltas[0], deltas[1], theta)
-            excluded = True
-        elif sol == "primal":
-            message = "({}, {}, {}) is not excluded.".format(deltas[0], deltas[1], theta)
-            excluded = False
-        else:
-            raise RuntimeError
+        message = "({}, {}, {}) ".format(deltas[0], deltas[1], theta)
     else:
-        if sol == "dual":
-            message = "({}, {}) is excluded.".format(deltas[0], deltas[1])
-            excluded = True
-        elif sol == "primal":
-            message = "({}, {}) is not excluded.".format(deltas[0], deltas[1])
-            excluded = False
-        else:
-            raise RuntimeError
+        message = "({}, {}) ".format(deltas[0], deltas[1])
+
+    if sol == "dual":
+        message += "is excluded. "
+        excluded = True
+    elif sol == "primal":
+        message += "is not excluded. "
+        excluded = False
+    else:
+        raise RuntimeError
 
     if profile:
-        message += "cboot_duration = {}, sdpb_duration = {}".format(cboot_duration, sdpb_duration)
-
-    print_out(message, f)
-
+        speedup = re.compile(r'Solver runtime [.]+ CPU \(([^ ]+)%\)').search(out)
+        message += "cboot_duration = {}, sdpb_duration = {}. ".format(cboot_duration, sdpb_duration)
+        if not speedup:
+            print_err("No MPI speedup message", out, f=f)
+        elif profile:
+            speedup = speedup.groups()[0]
+            message += "MPI speedup = {}%. ".format(speedup)
     if not keepxml:
         os.remove(xmlfile)
 
+    print_out(message, f)
     write_update(f_out)
-
     return excluded
 
 if __name__ == "__main__":
@@ -355,29 +355,7 @@ if __name__ == "__main__":
             check((point[0], point[1]), theta=point[2], f=f_out)
 
     elif len(points[0]) == 3 and envelope:
-        base_points = dict()
-
-        # Build the dictionary:
-        for point in points:
-            base_point = (point[0], point[1])
-            theta = point[2]
-            entry = base_points.get(base_point)
-            if entry is None:
-                base_points[base_point] = [theta]
-            else:
-                base_points[base_point].append(theta)
-
-        for base_point, thetas in base_points.iteritems():
-            thetas.sort()
-            # Go down from the top until something isn't excluded
-            above = len(thetas)
-            for above in range(len(thetas), 0, -1):
-                if not check(base_point, theta=thetas[above], f=f_out):
-                    break
-            # Go down until something isn't excluded
-            for below in range(0, above):
-                if not check(base_point, theta=thetas[below], f=f_out):
-                    break
+        envelope(points, f=f_out)
 
     if f_out is not None:
         f_out.close()
