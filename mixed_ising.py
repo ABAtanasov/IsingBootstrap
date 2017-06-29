@@ -13,14 +13,14 @@
 import sage.cboot as cb
 from sage.misc.cachefunc import cached_function
 from subprocess import Popen, PIPE
-import re
 import numpy as np
 import sys
 import os
 import argparse
 import time
-from point_generator import generate_points, generate_from_file, print_out
-from envelope_method import envelope
+from point_generator import generate_points, generate_from_file
+from envelope_method import envelope_loop
+from printing_tools import *
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
@@ -29,7 +29,7 @@ sdpb = "./sdpb"
 sdpbparams = ["--findPrimalFeasible",
               "--findDualFeasible",
               "--noFinalCheckpoint",
-              "--dualErrorThreshold=1e-15"]
+              "--dualErrorThreshold=1e-10"]
 
 context = None
 lmax = None
@@ -39,18 +39,6 @@ keepxml = None
 print_sdpb = None
 profile = None
 
-
-def print_err(message, dumpfile, f=None):
-    print_out("------------------------------------", f=f)
-    print_out(message, f=f)
-    print_out("------------------------------------", f=f)
-    print_out(dumpfile, f=f)
-
-
-def write_update(f_out):
-    if f_out is not None:
-        f_out.flush()
-        time.sleep(4)
 
 
 @cached_function
@@ -138,7 +126,6 @@ def make_F(deltas, sector, spin, gap_dict, Delta=None):
 
 
 def make_SDP(deltas, theta=None):
-
     pvms = []
     gaps = {("even", 0): 3, ("odd+", 0): 3}
     for spin in range(0, lmax):
@@ -171,14 +158,12 @@ def make_SDP(deltas, theta=None):
 
 
 def check(deltas, theta=None, f=None):
-
     start = time.time()
     prob = make_SDP(deltas, theta)
     end = time.time()
     cboot_duration = end - start
 
     xmlfile = os.path.join(scratchpath, name + ".xml")
-    # ckfile = os.path.join(scratchpath, name + ".ck")
     prob.write(xmlfile)
     sdpbargs = [sdpb, "-s", xmlfile] + sdpbparams
 
@@ -187,6 +172,8 @@ def check(deltas, theta=None, f=None):
     end = time.time()
     sdpb_duration = end - start
 
+    if not keepxml:
+        os.remove(xmlfile)
     if print_sdpb:
         print_out(out, f=f)
     if err:
@@ -194,44 +181,11 @@ def check(deltas, theta=None, f=None):
         os.system("rm scratch/{}.ck".format(name))
         return
 
-    sol = re.compile(r'found ([^ ]+) feasible').search(out)
-    if not sol:
-        print_err("The out file wasn't right: ", out, f=f)
-        os.system("rm scratch/{}.ck".format(name))
-        return
-    sol = sol.groups()[0]
-
-    if theta is not None:
-        message = "({}, {}, {}) ".format(deltas[0], deltas[1], theta)
-    else:
-        message = "({}, {}) ".format(deltas[0], deltas[1])
-
-    if sol == "dual":
-        message += "is excluded. "
-        excluded = True
-    elif sol == "primal":
-        message += "is not excluded. "
-        excluded = False
-    else:
-        raise RuntimeError
-
-    if profile:
-        speedup = re.compile(r'Solver runtime [.]+ CPU \(([^ ]+)%\)').search(out)
-        message += "cboot_duration = {}, sdpb_duration = {}. ".format(cboot_duration, sdpb_duration)
-        if not speedup:
-            print_err("No MPI speedup message", out, f=f)
-        elif profile:
-            speedup = speedup.groups()[0]
-            message += "MPI speedup = {}%. ".format(speedup)
-    if not keepxml:
-        os.remove(xmlfile)
-
-    print_out(message, f)
-    write_update(f_out)
+    durations = (cboot_duration, sdpb_duration)
+    excluded = print_point(deltas, theta, out, durations, profile, f)
     return excluded
 
 if __name__ == "__main__":
-
     # If no flags are given, print the help menu instead:
     if len(sys.argv) == 1:
         os.system("sage {} -h".format(os.path.abspath(__file__)))
@@ -355,7 +309,7 @@ if __name__ == "__main__":
             check((point[0], point[1]), theta=point[2], f=f_out)
 
     elif len(points[0]) == 3 and envelope:
-        envelope(points, f=f_out)
+        envelope_loop(points, f=f_out)
 
     if f_out is not None:
         f_out.close()

@@ -11,7 +11,7 @@ import os
 
 def read_lines(lines, points):
     inclusion = re.compile("is not excluded")   # regex compile for mixed_ising output
-    number_data = re.compile("[\d]+.[\d]+")     # general format for a double outputted
+    number_data = re.compile("-?[\d]+.[\d]+")     # general format for a double outputted
     for line in lines:
         if inclusion.search(line) is not None:  # check that this point is included
             data = number_data.findall(line)    # find the 2 or 3 coordinates of this point

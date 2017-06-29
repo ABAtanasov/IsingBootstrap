@@ -6,7 +6,7 @@
 import numpy as np
 import os
 import re
-from itertools import islice
+from printing_tools import *
 
 mainpath = os.path.dirname(__file__)
 scratchpath = os.path.join(mainpath, "scratch")
@@ -44,16 +44,6 @@ def array2dict(points):
 
     return base_points
 
-
-# --------------------------------------------------------
-# Prints to the file f or stdout if no f is specified
-# --------------------------------------------------------
-def print_out(string, f=None):
-    if f is not None:
-        f.write(string)
-        f.write("\n")
-    else:
-        print string
 
 
 # --------------------------------------------------------
@@ -159,7 +149,10 @@ def generate_to_file(params, batches=1, f_in=None):
     points = generate_points(params, f_in=f_in)
     name = params['name']
 
-    assert len(points) > 0
+    assert len(points) > 1
+
+    # In the case of a 2D scan over scaling dimensions, we break down
+    # the batches equally.
     if len(points[0]) == 2:
         num_points = len(points)
         for batch in range(batches):
@@ -168,7 +161,8 @@ def generate_to_file(params, batches=1, f_in=None):
             end   = ((batch + 1) * num_points)/batches
             for point in points[begin:end]:
                 f_new.write("{}\n".format(point))
-
+    # In the case of a 3D theta-scan, this bundles the submit files by
+    # Base point in the plane, so that the full theta-fiber is accessible
     elif len(points[0]) == 3:
         base_points = array2dict(points)
         num_points = len(base_points.keys())
