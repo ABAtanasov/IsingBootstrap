@@ -7,14 +7,17 @@
 # -----------------------------------------------------------------
 
 from point_generator import array2dict
-from mixed_ising import check
+import random
 
+def approx(a, b):
+    return abs(a - b) < 1e-10
 
 def get_step(theta_fiber):
+    assert sorted(theta_fiber)
     if len(theta_fiber) == 1:
         return None
     else:
-        step = min([t2 - t1 for t2, t1 in zip(theta_fiber[:-1], theta_fiber[1:])])
+        step = min([t2 - t1 for t1, t2 in zip(theta_fiber[:-1], theta_fiber[1:])])
         if step == 0.0:
             raise RuntimeError("There are repeated thetas in the list.")
         else:
@@ -22,34 +25,36 @@ def get_step(theta_fiber):
 
 
 def get_chunks(theta_fiber):
-    assert sorted(theta_fiber)
     step = get_step(theta_fiber)
     chunks = []
     chunk = [theta_fiber[0]]
+    if step is None:
+        return [chunk]
     for i in range(1, len(theta_fiber)):
-        if theta_fiber[i] - theta_fiber[i-1] != step:
+        if not approx(theta_fiber[i] - theta_fiber[i-1], step):
             chunks.append(chunk)
             chunk = [theta_fiber[i]]
         else:
             chunk.append(theta_fiber[i])
+    chunks.append(chunk)
     return chunks
 
 
-def erode(base_point, chunk, f=None):
+def erode(check, base_point, chunk, f=None):
     assert sorted(chunk)
 
     # Go down from the top until something isn't excluded
-    for above in range(len(chunk), 0, -1):
+    for above in range(len(chunk)-1, -1, -1):
         if not check(base_point, theta=chunk[above], f=f):
             break
 
     # Go down until something isn't excluded
     for below in range(0, above):
-        if not check(base_point, theta=chunk[above], f=f):
+        if not check(base_point, theta=chunk[below], f=f):
             break
 
 
-def envelope_loop(points, f=None):
+def envelope_loop(check, points, f=None):
     base_points = array2dict(points)
     for base_point, thetas in base_points.iteritems():
         # Over each base point, you can assume positive values of theta (for now.. with this batch..)
@@ -58,4 +63,4 @@ def envelope_loop(points, f=None):
         thetas.sort()
         chunks = get_chunks(thetas)
         for chunk in chunks:
-            erode(base_point, chunk, f=f)
+            erode(check, base_point, chunk, f=f)

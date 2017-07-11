@@ -18,8 +18,8 @@ import sys
 import os
 import argparse
 import time
+import envelope_method as env
 from point_generator import generate_points, generate_from_file
-from envelope_method import envelope_loop
 from printing_tools import *
 
 mainpath = os.path.dirname(__file__)
@@ -29,7 +29,9 @@ sdpb = "./sdpb"
 sdpbparams = ["--findPrimalFeasible",
               "--findDualFeasible",
               "--noFinalCheckpoint",
-              "--dualErrorThreshold=1e-10"]
+              "--dualErrorThreshold","1e-10",
+              "--primalErrorThreshold","1e-40"]
+
 
 context = None
 lmax = None
@@ -182,7 +184,7 @@ def check(deltas, theta=None, f=None):
         return
 
     durations = (cboot_duration, sdpb_duration)
-    excluded = print_point(deltas, theta, out, durations, profile, f)
+    excluded = print_point(deltas, theta, out, durations, profile, f=f)
     return excluded
 
 if __name__ == "__main__":
@@ -309,7 +311,7 @@ if __name__ == "__main__":
             check((point[0], point[1]), theta=point[2], f=f_out)
 
     elif len(points[0]) == 3 and envelope:
-        envelope_loop(points, f=f_out)
+        env.envelope_loop(check, points, f=f_out)
 
     if f_out is not None:
         f_out.close()

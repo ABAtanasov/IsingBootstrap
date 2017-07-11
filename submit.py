@@ -71,7 +71,7 @@ def submit_job(job_params, sdpb_params):
     jobfile = write_jobfile(cmd, name, paths,\
             mem = mem, ndays = ndays, threads = threads, queue = queue)
 
-    os.system("sbatch < {}".format(jobfile))
+    os.system("sbatch < {} -A poland".format(jobfile))
 
     print "submitted:\n  {}".format(cmd)
 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
             'dist':None, 'theta_dist':None, 'origin':None,
             'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
             'file':None,
-            'mem':8, 'ndays':1, 'threads':4, 'queue':'day'} # This last option is cluster-dependent
+            'mem':8, 'ndays':1, 'threads':4, 'queue':'pi_poland'} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
         if args[key]:

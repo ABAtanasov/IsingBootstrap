@@ -52,10 +52,10 @@ def print_point(deltas, theta, out, durations, profile, f=None):
         raise RuntimeError
 
     if profile:
-        speedup = re.compile(r'Solver runtime [.]+ CPU \(([^ ]+)%\)').search(out)
-        dual = re.compile(r'primalError[ ]+= ([^\s]+)').search(out)
+        speedup = re.compile(r'Solver runtime.+ CPU \(([^ ]+)%\)').search(out)
+        dual = re.compile(r'dualError[ ]+= ([^\s]+)').search(out)
         primal = re.compile(r'primalError[ ]+= ([^\s]+)').search(out)
-        message += "| cboot_duration = {}, sdpb_duration = {} ".format(durations[0], durations[1])
+        message += "| cboot = {}s, sdpb = {}s ".format(durations[0], durations[1])
         if not speedup:
             print_err("No MPI speedup message", out, f=f)
         else:
@@ -68,7 +68,7 @@ def print_point(deltas, theta, out, durations, profile, f=None):
             primal = primal.groups()[0]
             message += "| Errors: Dual = {}, Primal = {} ".format(make_decimal(dual), make_decimal(primal))
 
-    print_out(message, f)
+    print_out(message, f=f)
     write_update(f)
 
     return excluded
