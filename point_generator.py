@@ -131,6 +131,19 @@ def generate_from_file(params, f_in, f_out):
 
     return points
 
+def generate_from_file(f_in):
+
+    number_data = re.compile("-?[\d]+.[\d]*")
+    points = []
+
+    for line in f_in:
+        data = number_data.findall(line)
+        if data:
+            points.append(map(lambda x: float(x), data))
+
+    return points
+
+
 # --------------------------------------------------------
 # Generates a set of points, either from params or an
 # in_file, to and prints these to an out_file
