@@ -45,6 +45,28 @@ def array2dict(points):
     return base_points
 
 
+# --------------------------------------------------------
+# Given an in_file, prints the params to an out_file
+# (or stdout by default), and returns the list of points
+# contained in that file
+# --------------------------------------------------------
+def generate_from_file(params, f_in=None, f_out=None):
+
+    if f_out is not None and f_in is not None:
+        print_out("Using {}".format(params), f=f_out)
+        print_out("from file {}".format(f_in.name), f=f_out)
+
+    number_data = re.compile("-?[\d]+.[\d]*")
+    points = []
+
+    # The following gives the list of points contained in the file
+    for line in f_in:
+        data = number_data.findall(line)
+        if data:
+            points.append(map(lambda x: float(x), data))
+
+    return points
+
 
 # --------------------------------------------------------
 # If f_in is specified, generates the points from that
@@ -110,39 +132,6 @@ def generate_points(params, f_in=None, f_out=None):
 
     return points
 
-# --------------------------------------------------------
-# Given an in_file, prints the params to an out_file
-# (or stdout by default), and returns the list of points
-# contained in that file
-# --------------------------------------------------------
-def generate_from_file(params, f_in, f_out):
-
-    print_out("Using {}".format(params), f=f_out)
-    print_out("from file {}".format(f_in.name), f=f_out)
-
-    number_data = re.compile("-?[\d]+.[\d]*")
-    points = []
-
-    # The following gives the list of points contained in the file
-    for line in f_in:
-        data = number_data.findall(line)
-        if data:
-            points.append(map(lambda x: float(x), data))
-
-    return points
-
-def generate_from_file(f_in):
-
-    number_data = re.compile("-?[\d]+.[\d]*")
-    points = []
-
-    for line in f_in:
-        data = number_data.findall(line)
-        if data:
-            points.append(map(lambda x: float(x), data))
-
-    return points
-
 
 # --------------------------------------------------------
 # Generates a set of points, either from params or an
@@ -162,21 +151,12 @@ def generate_to_file(params, batches=1, f_in=None):
     points = generate_points(params, f_in=f_in)
     name = params['name']
 
-    assert len(points) > 1
+    assert len(points) > 0
+    assert len(points[0]) == 2 or len(points[0]) == 3
 
-    # In the case of a 2D scan over scaling dimensions, we break down
-    # the batches equally.
-    if len(points[0]) == 2:
-        num_points = len(points)
-        for batch in range(batches):
-            f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
-            begin = (batch * num_points)/batches
-            end   = ((batch + 1) * num_points)/batches
-            for point in points[begin:end]:
-                f_new.write("{}\n".format(point))
     # In the case of a 3D theta-scan, this bundles the submit files by
     # Base point in the plane, so that the full theta-fiber is accessible
-    elif len(points[0]) == 3:
+    if len(points[0]) == 3 and params['envelope']:
         base_points = array2dict(points)
         num_points = len(base_points.keys())
         batch = 0
@@ -192,7 +172,18 @@ def generate_to_file(params, batches=1, f_in=None):
                 f_new.close()
                 f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
 
+    # In the case of a 2D scan over scaling dimensions, we break down
+    # the batches equally.
     else:
-        raise RuntimeError
+        num_points = len(points)
+        for batch in range(batches):
+            f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
+
+            begin = (batch * num_points)/batches
+            end   = ((batch + 1) * num_points)/batches
+            for point in points[begin:end]:
+                f_new.write("{}\n".format(point))
+
 
     f_new.close()
+
