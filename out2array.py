@@ -10,8 +10,8 @@ import re
 import os
 from point_generator import generate_from_file
 
-def read_lines(lines, points, form="not excluded"):
-    inclusion = re.compile("(\([-?\d.\d, ]+\)) is " + form)
+def read_lines(lines, points, form="is not excluded"):
+    inclusion = re.compile("(\([-?\d.\d, ]+\)) " + form)
     number_data = re.compile("-?[\d]+.[\d]+")     # general format for a double outputted
     for line in lines:
         inclusionstring = inclusion.search(line)
@@ -24,12 +24,14 @@ if __name__ == "__main__":
     points = []
     if len(sys.argv) > 1 and sys.argv[1] == "envelope":
         envelope = True
+    else:
+        envelope = False
     # If one argument is supplied, it'll search through the out files
     # for all those matching that argument
     if len(sys.argv) > 1:
-        form = "not excluded"
+        form = "is not excluded"
         if envelope:
-            form = "excluded"
+            form = "is excluded"
 
         for filename in os.listdir("out_files"):
             if (sys.argv[-1]+'_') in filename:
@@ -41,11 +43,10 @@ if __name__ == "__main__":
     else:
         read_lines(sys.stdin.readlines(), points)
 
-    print points
 
     if envelope:
         with open("in_files/{}.pts".format(sys.argv[-2]), 'r') as f_in:
-            all_points = generate_from_file(f_in)
+            all_points = generate_from_file(f_in=f_in)
             points = [point for point in all_points if point not in points]
 
 

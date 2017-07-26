@@ -50,7 +50,7 @@ def array2dict(points):
 # (or stdout by default), and returns the list of points
 # contained in that file
 # --------------------------------------------------------
-def generate_from_file(params, f_in=None, f_out=None):
+def generate_from_file(params=None, f_in=None, f_out=None):
 
     if f_out is not None and f_in is not None:
         print_out("Using {}".format(params), f=f_out)
