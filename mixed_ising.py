@@ -40,7 +40,7 @@ name = None
 keepxml = None
 print_sdpb = None
 profile = None
-
+odd_scalar_gap = 3
 
 
 @cached_function
@@ -129,7 +129,7 @@ def make_F(deltas, sector, spin, gap_dict, Delta=None):
 
 def make_SDP(deltas, theta=None):
     pvms = []
-    gaps = {("even", 0): 3, ("odd+", 0): 3}
+    gaps = {("even", 0): 3, ("odd+", 0): odd_scalar_gap}
     for spin in range(0, lmax):
         if not spin % 2:
             pvms.append(make_F(deltas, "even", spin, gaps))
@@ -237,6 +237,8 @@ if __name__ == "__main__":
                         help="Do we profile the time taken? Default is no.")
     parser.add_argument("--envelope",
                         help="Option to use the \'envelope\' method of attack for theta scan")
+    parser.add_argument("--odd_scalar_gap", type=float,
+                        help="Option to change gap assumptions on sigma\'")
 
     # --------------------------------------
     # Args for sdpb
@@ -260,6 +262,7 @@ if __name__ == "__main__":
                   'dist': None, 'theta_dist': None,
                   'origin': None,
                   'keepxml': False, 'print_sdpb': False, 'profile': False, 'envelope': False,
+                  'odd_scalar_gap': 3,
                   'out_file': False, 'in_file': None}
 
     # params fed into sdpb
@@ -295,6 +298,7 @@ if __name__ == "__main__":
     Lambda = sdpb_params['Lambda']
     lmax = sdpb_params['lmax']
     nu_max = sdpb_params['nu_max']
+    odd_scalar_gap = job_params['odd_scalar_gap']
 
     sdpbparams.append("--precision={}".format(sdpb_params['precision']))
     sdpbparams.append("--maxThreads={}".format(sdpb_params['threads']))

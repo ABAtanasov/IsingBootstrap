@@ -55,6 +55,8 @@ def submit_job(job_params, sdpb_params):
         cmd += "--profile=True "
     if job_params['envelope']:
         cmd += "--envelope=True "
+    if job_params['odd_scalar_gap']:
+        cmd += "--odd_scalar_gap={} ".format(job_params['odd_scalar_gap'])
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
     bsubpath = os.path.join(mainpath, "bash_scripts")
@@ -160,7 +162,8 @@ if __name__ == "__main__":
                         help="Do we profile the time taken? Default is no.")
     parser.add_argument("--envelope",
                         help="Option to use the \'envelope\' method of attack for theta scan")
-
+    parser.add_argument("--odd_scalar_gap", type=float,
+                        help="Option to change gap assumptions on sigma\'")
 
     # --------------------------------------
     # Args for sdpb
@@ -194,6 +197,7 @@ if __name__ == "__main__":
             'range': None, 'theta_range': None,
             'dist':None, 'theta_dist':None, 'origin':None,
             'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
+            'odd_scalar_gap': 3,
             'file':None,
             'mem':8, 'ndays':1, 'threads':4, 'queue':'pi_poland'} # This last option is cluster-dependent
 
