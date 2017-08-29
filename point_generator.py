@@ -130,6 +130,7 @@ def generate_points(params, f_in=None, f_out=None):
             else:
                 points.append([sigma, epsilon])
 
+    write_update(f_out)
     return points
 
 

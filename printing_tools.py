@@ -34,14 +34,20 @@ def make_decimal(number):
 
 
 def print_point(deltas, theta, out, durations, profile, f=None):
-    sol = re.compile(r'found ([^ ]+) feasible').search(out)
-    sol = sol.groups()[0]
-
     if theta is not None:
         message = "({}, {}, {}) ".format(deltas[0], deltas[1], theta)
     else:
         message = "({}, {}) ".format(deltas[0], deltas[1])
 
+    sol = re.compile(r'found ([^ ]+) feasible').search(out)
+    if not sol:
+        print_err("The out file wasn't right: ", out, f=f)
+        os.system("rm scratch/{}.ck".format(name))
+        message += "is not excluded. "
+        print_out(message, f=f)
+        write_update(f)
+        return False
+    sol = sol.groups()[0]
     if sol == "dual":
         message += "is excluded. "
         excluded = True
@@ -66,7 +72,8 @@ def print_point(deltas, theta, out, durations, profile, f=None):
         else:
             dual = dual.groups()[0]
             primal = primal.groups()[0]
-            message += "| Errors: Dual = {}, Primal = {} ".format(make_decimal(dual), make_decimal(primal))
+            message += "| Errors: Dual = {}, Primal = {} ".format(
+                    make_decimal(dual), make_decimal(primal))
 
     print_out(message, f=f)
     write_update(f)

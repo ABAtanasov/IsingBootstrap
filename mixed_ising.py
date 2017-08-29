@@ -181,7 +181,7 @@ def check(deltas, theta=None, f=None):
     if err:
         print_err("An error occurred: ", err, f=f)
         os.system("rm scratch/{}.ck".format(name))
-        return
+        return False
 
     durations = (cboot_duration, sdpb_duration)
     excluded = print_point(deltas, theta, out, durations, profile, f=f)
