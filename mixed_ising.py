@@ -129,7 +129,10 @@ def make_F(deltas, sector, spin, gap_dict, Delta=None):
 
 def make_SDP(deltas, theta=None):
     pvms = []
-    gaps = {("even", 0): 3, ("odd+", 0): odd_scalar_gap}
+    if odd_scalar_gap == 3:
+        gaps = {("even", 0): 3, ("odd+", 0): 3}
+    else:
+        gaps = {("even", 0): odd_scalar_gap+1, ("odd+", 0): odd_scalar_gap}
     for spin in range(0, lmax):
         if not spin % 2:
             pvms.append(make_F(deltas, "even", spin, gaps))
