@@ -1,5 +1,6 @@
 import time
 import re
+import os
 from decimal import Decimal
 
 # --------------------------------------------------------
@@ -33,9 +34,9 @@ def make_decimal(number):
     return "%.3E" % Decimal(number)
 
 
-def print_point(deltas, theta, out, durations, profile, f=None):
-    if theta is not None:
-        message = "({}, {}, {}) ".format(deltas[0], deltas[1], theta)
+def print_point(deltas, out, name, durations, profile=True, f=None):
+    if len(deltas) == 3:
+        message = "({}, {}, {}) ".format(deltas[0], deltas[1], deltas[2])
     else:
         message = "({}, {}) ".format(deltas[0], deltas[1])
 

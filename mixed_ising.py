@@ -15,9 +15,7 @@ from sage.misc.cachefunc import cached_function
 from subprocess import Popen, PIPE
 import numpy as np
 import sys
-import os
 import argparse
-import time
 import envelope_method as env
 from point_generator import generate_points, generate_from_file
 from printing_tools import *
@@ -41,6 +39,8 @@ keepxml = None
 print_sdpb = None
 profile = None
 odd_scalar_gap = 3
+even_scalar_gap = 3
+spin_2_gap = None
 
 
 @cached_function
@@ -127,12 +127,12 @@ def make_F(deltas, sector, spin, gap_dict, Delta=None):
         raise RuntimeError("unknown sector name")
 
 
-def make_SDP(deltas, theta=None):
+def make_SDP(deltas):
     pvms = []
-    if odd_scalar_gap == 3:
-        gaps = {("even", 0): 3, ("odd+", 0): 3}
+    if spin_2_gap is not None:
+        gaps = {("even", 0): even_scalar_gap, ("odd+", 0): odd_scalar_gap, ("even", 2): spin_2_gap}
     else:
-        gaps = {("even", 0): odd_scalar_gap+1, ("odd+", 0): odd_scalar_gap}
+        gaps = {("even", 0): even_scalar_gap, ("odd+", 0): odd_scalar_gap}
     for spin in range(0, lmax):
         if not spin % 2:
             pvms.append(make_F(deltas, "even", spin, gaps))
@@ -144,7 +144,8 @@ def make_SDP(deltas, theta=None):
     sigma_contribution = make_F(deltas, "odd+", 0, {}, Delta=deltas[0])
     for m, x in zip(epsilon_contribution, sigma_contribution):
         m[0][0] += x
-    if theta is not None:
+    if len(deltas) == 3:
+        theta = deltas[2]
         V = epsilon_contribution
         constraint = []
         sn = np.sin(theta)
@@ -162,9 +163,9 @@ def make_SDP(deltas, theta=None):
     return context.sumrule_to_SDP(norm, obj, pvms)
 
 
-def check(deltas, theta=None, f=None):
+def check(deltas, f=None):
     start = time.time()
-    prob = make_SDP(deltas, theta)
+    prob = make_SDP(deltas)
     end = time.time()
     cboot_duration = end - start
 
@@ -187,7 +188,7 @@ def check(deltas, theta=None, f=None):
         return False
 
     durations = (cboot_duration, sdpb_duration)
-    excluded = print_point(deltas, theta, out, durations, profile, f=f)
+    excluded = print_point(deltas, out, name, durations, profile, f=f)
     return excluded
 
 if __name__ == "__main__":
@@ -242,6 +243,19 @@ if __name__ == "__main__":
                         help="Option to use the \'envelope\' method of attack for theta scan")
     parser.add_argument("--odd_scalar_gap", type=float,
                         help="Option to change gap assumptions on sigma\'")
+    parser.add_argument("--even_scalar_gap", type=float,
+                        help="Option to change gap assumptions on Z2 even epsilon\'")
+    parser.add_argument("--spin_2_gap", type=float,
+                        help="Option to change gap assumptions on Z2 even T\'")
+
+    # parser.add_argument("--max_bisections", type=int,
+    #                     help="Maximum number of bisections we run")
+    # parser.add_argument("-ssp", "--sig_spacing", type=float,
+    #                     help="initial bisection spacing")
+    # parser.add_argument("-esp", "--eps_spacing", type=float,
+    #                     help="initial bisection spacing")
+    # parser.add_argument("-tsp", "--theta_spacing", type=float,
+    #                     help="initial bisection spacing")
 
     # --------------------------------------
     # Args for sdpb
@@ -265,7 +279,9 @@ if __name__ == "__main__":
                   'dist': None, 'theta_dist': None,
                   'origin': None,
                   'keepxml': False, 'print_sdpb': False, 'profile': False, 'envelope': False,
-                  'odd_scalar_gap': 3,
+                  'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
+                  # 'max_bisections': None,
+                  # 'sig_spacing': 0, 'eps_spacing': 0, 'theta_spacing': 0,
                   'out_file': False, 'in_file': None}
 
     # params fed into sdpb
@@ -302,23 +318,34 @@ if __name__ == "__main__":
     lmax = sdpb_params['lmax']
     nu_max = sdpb_params['nu_max']
     odd_scalar_gap = job_params['odd_scalar_gap']
+    even_scalar_gap = job_params['even_scalar_gap']
+    spin_2_gap = job_params['spin_2_gap']
+
 
     sdpbparams.append("--precision={}".format(sdpb_params['precision']))
     sdpbparams.append("--maxThreads={}".format(sdpb_params['threads']))
     sdpbparams.append("--maxIterations={}".format(sdpb_params['maxIters']))
 
+    # Make the context for a 3D conformal field theory
     context = cb.context_for_scalar(epsilon=0.5, Lambda=Lambda)
 
+    assert len(points) > 0
+
     if len(points[0]) == 2:
-        for point in points:
-            check((point[0], point[1]), f=f_out)
+        if envelope:
+            env.envelope_loop2D(check, points, f=f_out)
+        else:
+            for point in points:
+                check((point[0], point[1]), f=f_out)
+    elif len(points[0]) == 3:
+        if envelope:
+            env.envelope_loop3D(check, points, f=f_out)
+        else:
+            for point in points:
+                check((point[0], point[1], point[2]), f=f_out)
+    else:
+        raise NotImplementedError('Inputs of more than than three CFT data are not yet implemented')
 
-    elif len(points[0]) == 3 and not envelope:
-        for point in points:
-            check((point[0], point[1]), theta=point[2], f=f_out)
-
-    elif len(points[0]) == 3 and envelope:
-        env.envelope_loop(check, points, f=f_out)
 
     if f_out is not None:
         f_out.close()

@@ -7,4 +7,5 @@
 *.pyc
 *.pts
 *.idea/
+*.DS_Store
 scratch/
