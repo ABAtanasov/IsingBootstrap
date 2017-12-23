@@ -6,7 +6,6 @@ import os
 import errno
 import sys
 import argparse
-import numpy as np
 from point_generator import generate_to_file
 
 
@@ -57,6 +56,10 @@ def submit_job(job_params, sdpb_params):
         cmd += "--envelope=True "
     if job_params['odd_scalar_gap']:
         cmd += "--odd_scalar_gap={} ".format(job_params['odd_scalar_gap'])
+    if job_params['even_scalar_gap']:
+        cmd += "--even_scalar_gap={} ".format(job_params['even_scalar_gap'])
+    if job_params['spin_2_gap']:
+        cmd += "--spin_2_gap={} ".format(job_params['spin_2_gap'])
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
     bsubpath = os.path.join(mainpath, "bash_scripts")
@@ -67,11 +70,11 @@ def submit_job(job_params, sdpb_params):
     mkdir_p(outpath)
     mkdir_p(bsubpath)
 
-    paths = {"main":mainpath, "sh_scripts":bsubpath, \
-             "scratch":scratchpath, "out":outpath}
+    paths = {"main": mainpath, "sh_scripts": bsubpath,
+             "scratch": scratchpath, "out": outpath}
 
-    jobfile = write_jobfile(cmd, name, paths,\
-            mem = mem, ndays = ndays, threads = threads, queue = queue)
+    jobfile = write_jobfile(cmd, name, paths,
+                            mem=mem, ndays=ndays, threads=threads, queue=queue)
 
     os.system("sbatch < {} -A poland".format(jobfile))
 
@@ -87,27 +90,27 @@ def write_jobfile(cmd, jobname, paths,
 
     days = '{}'.format(int(ndays))
     if len(days) == 1:
-        days = '0'+ days
+        days = '0' + days
 
     jobfile = os.path.join(paths["sh_scripts"], jobname + '.sh')
 
     with open(jobfile, 'w') as f:
         f.write('#! /bin/bash\n'
-            + '\n'
-            + '#SBATCH --job-name={}\n'.format(jobname)
-            + '#SBATCH --partition={}\n'.format(queue)
-            + '#SBATCH --mem-per-cpu={}\n'.format(int(mem)*1000)
-            + '#SBATCH --time={}-00:00:00\n'.format(days)
-            + '#SBATCH --cpus-per-task={}\n'.format(threads)
-            + '#SBATCH --ntasks=1\n'
-            + '#SBATCH --output={}/{}-%j.out'.format(paths['scratch'], jobname)
-            + '\n'
-            + 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n'
-            + '. ~/.bashrc\n'
-            + '{} 2>&1\n'.format(cmd)
-            + '\n'
-            + 'exit 0;\n'
-            )
+                + '\n'
+                + '#SBATCH --job-name={}\n'.format(jobname)
+                + '#SBATCH --partition={}\n'.format(queue)
+                + '#SBATCH --mem-per-cpu={}\n'.format(int(mem)*1000)
+                + '#SBATCH --time={}-00:00:00\n'.format(days)
+                + '#SBATCH --cpus-per-task={}\n'.format(threads)
+                + '#SBATCH --ntasks=1\n'
+                + '#SBATCH --output={}/{}-%j.out'.format(paths['scratch'], jobname)
+                + '\n'
+                + 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n'
+                + '. ~/.bashrc\n'
+                + '{} 2>&1\n'.format(cmd)
+                + '\n'
+                + 'exit 0;\n'
+                )
 
     return jobfile
 
@@ -124,8 +127,8 @@ if __name__ == "__main__":
     # --------------------------------------
     # Args for submit.py
     # --------------------------------------
-    parser.add_argument("-B", "--batches", type=int, \
-            help="info for how jobs are submitted into batches")
+    parser.add_argument("-B", "--batches", type=int,
+                        help="info for how jobs are submitted into batches")
 
     # --------------------------------------
     # Args for mixed_ising.py
@@ -163,27 +166,40 @@ if __name__ == "__main__":
     parser.add_argument("--envelope",
                         help="Option to use the \'envelope\' method of attack for theta scan")
     parser.add_argument("--odd_scalar_gap", type=float,
-                        help="Option to change gap assumptions on sigma\'")
+                        help="Option to change gap assumptions on Z2 odd sigma\'")
+    parser.add_argument("--even_scalar_gap", type=float,
+                        help="Option to change gap assumptions on Z2 even epsilon\'")
+    parser.add_argument("--spin_2_gap", type=float,
+                        help="Option to change gap assumptions on Z2 even T\'")
+
+    # parser.add_argument("--max_bisections", type=int,
+    #                     help="Maximum number of bisections we run")
+    # parser.add_argument("-ssp", "--sig_spacing", type=float,
+    #                     help="initial bisection spacing")
+    # parser.add_argument("-esp", "--eps_spacing", type=float,
+    #                     help="initial bisection spacing")
+    # parser.add_argument("-tsp", "--theta_spacing", type=float,
+    #                     help="initial bisection spacing")
 
     # --------------------------------------
     # Args for sdpb
     # --------------------------------------
-    parser.add_argument("-p", "--precision", type =int, \
-            help="working precision for sdpb calculations")
-    parser.add_argument("-i", "--maxIters", type=int, \
-            help="max number of sdpb iterations")
-    parser.add_argument("--threads", type=int, \
+    parser.add_argument("-p", "--precision", type =int,
+                        help="working precision for sdpb calculations")
+    parser.add_argument("-i", "--maxIters", type=int,
+                        help="max number of sdpb iterations")
+    parser.add_argument("--threads", type=int,
                         help="maximum threads used by OpenMP")
 
     # --------------------------------------
     # Args for the cluster
     # --------------------------------------
-    parser.add_argument("--mem", type = int,\
-            help="maximum memory in GB allocated per node in cluster")
-    parser.add_argument("--ndays", type = int,\
-            help="number of days to run process on cluster")
-    parser.add_argument("-q", "--queue", type = str,\
-            help="queue to submit to")
+    parser.add_argument("--mem", type = int,
+                        help="maximum memory in GB allocated per node in cluster")
+    parser.add_argument("--ndays", type = int,
+                        help="number of days to run process on cluster")
+    parser.add_argument("-q", "--queue", type = str,
+                        help="queue to submit to")
 
     # Take the args as dictionary
     args = parser.parse_args().__dict__
@@ -197,7 +213,7 @@ if __name__ == "__main__":
             'range': None, 'theta_range': None,
             'dist':None, 'theta_dist':None, 'origin':None,
             'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
-            'odd_scalar_gap': 3,
+            'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
             'file':None,
             'mem':8, 'ndays':1, 'threads':4, 'queue':'pi_poland'} # This last option is cluster-dependent
 

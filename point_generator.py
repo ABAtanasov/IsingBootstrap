@@ -4,8 +4,6 @@
 # -----------------------------------------------------------------
 
 import numpy as np
-import os
-import re
 from printing_tools import *
 
 mainpath = os.path.dirname(__file__)
@@ -18,15 +16,15 @@ def mkrange(a, b, resolution):
     if resolution == 1:
         return np.array([0.5*(a+b)])
     else:
-        return np.linspace(a, b, num = resolution)
+        return np.linspace(a, b, num=resolution)
 
 
 # --------------------------------------------------------
 # Converts a (3D) array of points into a dict
 # of base points as keys and their theta-fibers as vals
 # --------------------------------------------------------
-def array2dict(points):
-    assert len(points) > 0 and len(points[0]) > 2
+def array2dict3D(points):
+    assert len(points) > 0 and len(points[0]) == 3
     base_points = dict()
     # Build the dictionary:
     for point in points:
@@ -44,6 +42,25 @@ def array2dict(points):
 
     return base_points
 
+
+def array2dict2D(points):
+    assert len(points) > 0 and len(points[0]) == 2
+    base_points = dict()
+    # Build the dictionary:
+    for point in points:
+        base_point = (point[0], )
+        eps = point[1]
+        entry = base_points.get(base_point)
+        if entry is None:
+            base_points[base_point] = [eps]
+        else:
+            base_points[base_point].append(eps)
+
+    # Sort the dictionary
+    for epsilons in base_points.values():
+        epsilons.sort()
+
+    return base_points
 
 # --------------------------------------------------------
 # Given an in_file, prints the params to an out_file
@@ -158,7 +175,7 @@ def generate_to_file(params, batches=1, f_in=None):
     # In the case of a 3D theta-scan, this bundles the submit files by
     # Base point in the plane, so that the full theta-fiber is accessible
     if len(points[0]) == 3 and params['envelope']:
-        base_points = array2dict(points)
+        base_points = array2dict3D(points)
         num_points = len(base_points.keys())
         batch = 0
         point_num = 0
