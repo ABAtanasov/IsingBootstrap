@@ -6,7 +6,7 @@
 #
 # -----------------------------------------------------------------
 
-from point_generator import array2dict3D
+from point_generator import array2dict2D, array2dict3D
 
 
 def approx(a, b, rel_tol=1e-09, abs_tol=0.0):
@@ -70,11 +70,8 @@ def envelope_loop3D(check, points, f=None):
 
 
 def envelope_loop2D(check, points, f=None):
-    base_points = array2dict3D(points)
+    base_points = array2dict2D(points)
     for base_point, epsilons in base_points.iteritems():
-        # Over each base point, you can assume positive values of theta (for now.. with this batch..)
-        # with uniform step size (in fact 0.01 for this batch)
-        # From there, get the connected components and erode
         epsilons.sort()
         chunks = get_chunks(epsilons)
         for chunk in chunks:

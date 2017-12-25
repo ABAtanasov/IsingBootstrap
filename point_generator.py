@@ -174,15 +174,21 @@ def generate_to_file(params, batches=1, f_in=None):
 
     # In the case of a 3D theta-scan, this bundles the submit files by
     # Base point in the plane, so that the full theta-fiber is accessible
-    if len(points[0]) == 3 and params['envelope']:
-        base_points = array2dict3D(points)
+    if params['envelope']:
+        if len(points[0]) == 2:
+            base_points = array2dict2D(points)
+        elif len(points[0]) == 3:
+            base_points = array2dict3D(points)
         num_points = len(base_points.keys())
         batch = 0
         point_num = 0
         f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
-        for base_point, thetas in base_points.iteritems():
-            for theta in thetas:
-                f_new.write("({}, {}, {})\n".format(base_point[0], base_point[1], theta))
+        for base_point, fiber in base_points.iteritems():
+            for value in fiber:
+                if len(points[0]) == 2:
+                    f_new.write("({}, {})\n".format(base_point[0], value))
+                elif len(points[0]) == 3:
+                    f_new.write("({}, {}, {})\n".format(base_point[0], base_point[1], value))
             point_num += 1
             if point_num * batches >= num_points:
                 batch += 1
