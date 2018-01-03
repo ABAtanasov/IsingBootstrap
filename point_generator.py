@@ -172,8 +172,8 @@ def generate_to_file(params, batches=1, f_in=None):
     assert len(points) > 0
     assert len(points[0]) == 2 or len(points[0]) == 3
 
-    # In the case of a 3D theta-scan, this bundles the submit files by
-    # Base point in the plane, so that the full theta-fiber is accessible
+    # In the case of an envelope method this bundles the submit files by
+    # Base point in the plane, so that the full fiber is accessible for a given job
     if params['envelope']:
         if len(points[0]) == 2:
             base_points = array2dict2D(points)

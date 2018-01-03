@@ -52,7 +52,7 @@ def erode(check, base_point, chunk, f=None):
 
     # Go down until something isn't excluded
     for below in range(0, above):
-        point = tuple(list(base_point) + list(chunk[below]))
+        point = tuple(list(base_point) + [chunk[below]])
         if not check(point, f=f):
             break
 
@@ -76,3 +76,4 @@ def envelope_loop2D(check, points, f=None):
         chunks = get_chunks(epsilons)
         for chunk in chunks:
             erode(check, base_point, chunk, f=f)
+

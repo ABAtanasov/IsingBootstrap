@@ -28,7 +28,7 @@ sdpbparams = ["--findPrimalFeasible",
               "--findDualFeasible",
               "--noFinalCheckpoint",
               "--dualErrorThreshold","1e-10",
-              "--primalErrorThreshold","1e-20"]
+              "--primalErrorThreshold","1e-40"]
 
 
 context = None
