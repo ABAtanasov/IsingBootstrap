@@ -184,17 +184,17 @@ def generate_to_file(params, batches=1, f_in=None):
         point_num = 0
         f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
         for base_point, fiber in base_points.iteritems():
+            if point_num > num_points/batches and batch+1 != batches:
+                batch += 1
+                point_num = 1
+                f_new.close()
+                f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
             for value in fiber:
                 if len(points[0]) == 2:
                     f_new.write("({}, {})\n".format(base_point[0], value))
                 elif len(points[0]) == 3:
                     f_new.write("({}, {}, {})\n".format(base_point[0], base_point[1], value))
             point_num += 1
-            if point_num * batches >= num_points:
-                batch += 1
-                point_num = 0
-                f_new.close()
-                f_new = open("scratch/{}_{}of{}.pts".format(name, batch + 1, batches), 'w')
 
     # In the case of a 2D scan over scaling dimensions, we break down
     # the batches equally.
