@@ -93,14 +93,17 @@ def generate_from_file(params=None, f_in=None, f_out=None):
 # --------------------------------------------------------
 def generate_points(params, f_in=None, f_out=None):
 
+    # Usually we will just read in from a file (can effectively ignore things below this)
     if f_in is not None:
         return generate_from_file(params, f_in=f_in, f_out=f_out)
 
+    # Otherwise I will assume we are looking to resolve information near the 3D Ising CFT point
     Dsig = 0.518154
     Deps = 1.41267
     distance = (0.002, 0.02)
     theta0 = 0.969260330903202
 
+    # Or some other origin/distance specified by the user
     if params['origin'] and not params['range']:
         Dsig, Deps = params['origin']
     if params['dist'] and not params['range']:

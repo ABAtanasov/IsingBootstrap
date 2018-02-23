@@ -9,4 +9,5 @@
 *.idea/
 test*
 *.DS_Store
+*.ipynb
 scratch/

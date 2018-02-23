@@ -15,8 +15,9 @@ from sage.misc.cachefunc import cached_function
 from subprocess import Popen, PIPE
 import numpy as np
 import sys
-import argparse
+import parser_tools
 import envelope_method as env
+import bisection_method as bis
 from point_generator import generate_points, generate_from_file
 from printing_tools import *
 
@@ -202,71 +203,10 @@ if __name__ == "__main__":
         os.system("python {} -h".format(os.path.abspath(__file__)))
         exit(0)
 
-    parser = argparse.ArgumentParser()
+    # Parse lines from command line
+    parser = parser_tools.build_parser()
 
-    # --------------------------------------
-    # Args for mixed_ising.py
-    # --------------------------------------
-    parser.add_argument("-N", "--name", type=str,
-                        help="name for the associated files")
-    parser.add_argument("-L", "--Lambda", type=int,
-                        help="maximum derivative order")
-    parser.add_argument("-l", "--lmax", type=int,
-                        help="angular momentum cutoff")
-    parser.add_argument("-nu", "--nu_max", type=int,
-                        help="maximum number of poles")
-    parser.add_argument("--res", type=int, nargs=2,
-                        help="number of sampling points along each axis")
-    parser.add_argument("--theta_res", type=int,
-                        help="number of sampling points over use_theta")
-    parser.add_argument("--dist", type=float,
-                        help="distance of Delta_sigma window from the 3D Ising point")
-    parser.add_argument("--theta_dist", type=float,
-                        help="distance of use_theta window from the 3D Ising use_theta")
-    parser.add_argument("--range", type=float, nargs=4,
-                        help="4 floats xmin xmax ymin ymax")
-    parser.add_argument("--origin", type=float, nargs=2,
-                        help="2 floats x_origin y_origin")
-    parser.add_argument("--theta_range", type=float, nargs=2,
-                        help="2 floats theta_min theta_max")
-    parser.add_argument("--in_file", type=str,
-                        help="file to read points from")
-    parser.add_argument("--out_file", type=bool,
-                        help="do we print out to a file?")
-    parser.add_argument("--keepxml",
-                        help="Do we keep the xml? Default is no.")
-    parser.add_argument("--print_sdpb",
-                        help="Do we print the sdpb output? Default is no.")
-    parser.add_argument("--profile",
-                        help="Do we profile the time taken? Default is no.")
-    parser.add_argument("--envelope",
-                        help="Option to use the \'envelope\' method of attack for theta scan")
-    parser.add_argument("--odd_scalar_gap", type=float,
-                        help="Option to change gap assumptions on sigma\'")
-    parser.add_argument("--even_scalar_gap", type=float,
-                        help="Option to change gap assumptions on Z2 even epsilon\'")
-    parser.add_argument("--spin_2_gap", type=float,
-                        help="Option to change gap assumptions on Z2 even T\'")
-
-    # parser.add_argument("--max_bisections", type=int,
-    #                     help="Maximum number of bisections we run")
-    # parser.add_argument("-ssp", "--sig_spacing", type=float,
-    #                     help="initial bisection spacing")
-    # parser.add_argument("-esp", "--eps_spacing", type=float,
-    #                     help="initial bisection spacing")
-    # parser.add_argument("-tsp", "--theta_spacing", type=float,
-    #                     help="initial bisection spacing")
-
-    # --------------------------------------
-    # Args for sdpb
-    # --------------------------------------
-    parser.add_argument("-p", "--precision", type=int,
-                        help="working precision for sdpb calculations")
-    parser.add_argument("-i", "--maxIters", type=int,
-                        help="max number of sdpb iterations")
-    parser.add_argument("--threads", type=int,
-                        help="maximum threads used by OpenMP")
-
+    # Take the args as dictionary
     args = parser.parse_args().__dict__
 
     # Params fed into sdpb
@@ -280,8 +220,8 @@ if __name__ == "__main__":
                   'origin': None,
                   'keepxml': False, 'print_sdpb': False, 'profile': False, 'envelope': False,
                   'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
-                  # 'max_bisections': None,
-                  # 'sig_spacing': 0, 'eps_spacing': 0, 'theta_spacing': 0,
+                  'max_bisections': None,
+                  'sig_spacing': None, 'eps_spacing': None, 'theta_spacing': None,
                   'out_file': False, 'in_file': None}
 
     # params fed into sdpb
@@ -331,7 +271,13 @@ if __name__ == "__main__":
 
     assert len(points) > 0
 
-    if len(points[0]) == 2:
+    if job_params['max_bisections'] is not None:
+        if job_params['theta_spacing'] is not None:
+            spacing = [job_params['sig_spacing'], job_params['eps_spacing'], job_params['theta_spacing']]
+        else:
+            spacing = [job_params['sig_spacing'], job_params['eps_spacing']]
+        bis.bisection_loop(check, points, spacing=spacing, max_bisections=job_params['max_bisections'], f=f_out)
+    elif len(points[0]) == 2:
         if envelope:
             env.envelope_loop2D(check, points, f=f_out)
         else:
