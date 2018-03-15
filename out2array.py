@@ -27,7 +27,6 @@ def read_bisections(lines, points):
     line = len(lines)-1
     boundary_found = False
     prev_point = None; prev_point2 = None; point = None
-    print "we have", line, "lines"
     while line >=0:
         inclusionstring = inclusion.search(lines[line])
         if inclusionstring is None:
@@ -42,9 +41,10 @@ def read_bisections(lines, points):
             if np.linalg.norm(prev_point - prev_point2) > np.linalg.norm(point - prev_point):
                 boundary_found = False
         if not boundary_found and 'not excluded' in lines[line]: # and 'not' not in lines[line]:
-            points.append((point))  # add it as an array of floats
+            points.append(map(lambda x: round(x, 10), list(point)))  # add it as an array of floats
             boundary_found = True
         line -= 1
+
 
 
 if __name__ == "__main__":

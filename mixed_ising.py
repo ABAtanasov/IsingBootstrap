@@ -226,14 +226,14 @@ if __name__ == "__main__":
 
     # params fed into sdpb
     for key in sdpb_params.keys():
-        if args[key]:
+        if args[key] is not None:
             sdpb_params[key] = args[key]
         elif key in ['Lambda', 'lmax', 'nu_max']:
             print "Warning, {} not specified. Using {} = {}.".format(key, key, sdpb_params[key])
 
     # params characterizing the job
     for key in job_params.keys():
-        if args[key]:
+        if args[key] is not None:
             job_params[key] = args[key]
 
     name = job_params['name']
@@ -276,7 +276,7 @@ if __name__ == "__main__":
             spacing = [job_params['sig_spacing'], job_params['eps_spacing'], job_params['theta_spacing']]
         else:
             spacing = [job_params['sig_spacing'], job_params['eps_spacing']]
-        bis.bisection_loop(check, points, spacing=spacing, max_bisections=job_params['max_bisections'], f=f_out)
+        bis.bisect_loop(check, points, spacing=spacing, max_bisections=job_params['max_bisections'], f=f_out)
     elif len(points[0]) == 2:
         if envelope:
             env.envelope_loop2D(check, points, f=f_out)

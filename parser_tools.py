@@ -49,6 +49,10 @@ def build_parser():
                         help="Do we profile the time taken? Default is no.")
     parser.add_argument("--envelope",
                         help="Option to use the \'envelope\' method of attack for theta scan")
+
+    # --------------------------------------
+    # Args for gap assumptions
+    # --------------------------------------
     parser.add_argument("--odd_scalar_gap", type=float,
                         help="Option to change gap assumptions on sigma\'")
     parser.add_argument("--even_scalar_gap", type=float,
@@ -56,6 +60,9 @@ def build_parser():
     parser.add_argument("--spin_2_gap", type=float,
                         help="Option to change gap assumptions on Z2 even T\'")
 
+    # --------------------------------------
+    # Args for Bisection
+    # --------------------------------------
     parser.add_argument("--max_bisections", type=int,
                         help="Maximum number of bisections we run")
     parser.add_argument("-ssp", "--sig_spacing", type=float,

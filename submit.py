@@ -145,19 +145,19 @@ if __name__ == "__main__":
             'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
             'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
             'max_bisections': None, 'sig_spacing': None, 'eps_spacing': None,
-            'theta_spacing': None, 'bisections': None,
+            'theta_spacing': None,
             'file':None,
             'mem':8, 'ndays':1, 'threads':4, 'queue':'pi_poland'} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
-        if args[key]:
+        if args[key] is not None:
             sdpb_params[key] = args[key]
         elif key in ["Lambda", "lmax", "nu_max"]:
             print "Warning, {} not specified. Using {} = {}.".format(
                     key, key, sdpb_params[key])
 
     for key in job_params.keys():
-        if args[key]:
+        if args[key] is not None:
             job_params[key]=args[key]
 
     if job_params['max_bisections']:
