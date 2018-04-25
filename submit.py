@@ -54,18 +54,18 @@ def submit_job(job_params, sdpb_params):
         cmd += "--profile=True "
     if job_params['envelope']:
         cmd += "--envelope=True "
-    if job_params['odd_scalar_gap']:
+    if job_params['odd_scalar_gap'] is not None:
         cmd += "--odd_scalar_gap={} ".format(job_params['odd_scalar_gap'])
-    if job_params['even_scalar_gap']:
+    if job_params['even_scalar_gap'] is not None:
         cmd += "--even_scalar_gap={} ".format(job_params['even_scalar_gap'])
-    if job_params['spin_2_gap']:
+    if job_params['spin_2_gap'] is not None:
         cmd += "--spin_2_gap={} ".format(job_params['spin_2_gap'])
-    if job_params['max_bisections']:
+    if job_params['max_bisections'] is not None:
         cmd += "--max_bisections={} ".format(job_params['max_bisections'])
         cmd += "--sig_spacing={} ".format(job_params['sig_spacing'])
         cmd += "--eps_spacing={} ".format(job_params['eps_spacing'])
         cmd += "--side={} ".format(job_params['side'])
-    if job_params['theta_spacing']:
+    if job_params['theta_spacing'] is not None:
         cmd += "--theta_spacing={} ".format(job_params['theta_spacing'])
 
     mainpath = os.path.dirname(os.path.abspath(__file__))
