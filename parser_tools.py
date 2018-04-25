@@ -65,6 +65,8 @@ def build_parser():
     # --------------------------------------
     parser.add_argument("--max_bisections", type=int,
                         help="Maximum number of bisections we run")
+    parser.add_argument("--side", type=str,
+                        help="Are we starting from the inside or outside of the region during bisection?")
     parser.add_argument("-ssp", "--sig_spacing", type=float,
                         help="initial bisection spacing")
     parser.add_argument("-esp", "--eps_spacing", type=float,
@@ -86,11 +88,11 @@ def build_parser():
     # --------------------------------------
     # Args for the cluster
     # --------------------------------------
-    parser.add_argument("--mem", type = int,
+    parser.add_argument("--mem", type=int,
                         help="maximum memory in GB allocated per node in cluster")
-    parser.add_argument("--ndays", type = int,
+    parser.add_argument("--ndays", type=int,
                         help="number of days to run process on cluster")
-    parser.add_argument("-q", "--queue", type = str,
+    parser.add_argument("-q", "--queue", type=str,
                         help="queue to submit to")
 
     return parser

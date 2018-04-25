@@ -64,6 +64,7 @@ def submit_job(job_params, sdpb_params):
         cmd += "--max_bisections={} ".format(job_params['max_bisections'])
         cmd += "--sig_spacing={} ".format(job_params['sig_spacing'])
         cmd += "--eps_spacing={} ".format(job_params['eps_spacing'])
+        cmd += "--side={} ".format(job_params['side'])
     if job_params['theta_spacing']:
         cmd += "--theta_spacing={} ".format(job_params['theta_spacing'])
 
@@ -139,15 +140,15 @@ if __name__ == "__main__":
 
     # Params fed into the cluster/mixed_ising
     job_params = {'name':"untitled",
-            'res':[1, 1], 'theta_res':1,
-            'range': None, 'theta_range': None,
-            'dist':None, 'theta_dist':None, 'origin':None,
-            'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
-            'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
-            'max_bisections': None, 'sig_spacing': None, 'eps_spacing': None,
-            'theta_spacing': None,
-            'file':None,
-            'mem':8, 'ndays':1, 'threads':4, 'queue':'pi_poland'} # This last option is cluster-dependent
+                  'res': [1, 1], 'theta_res':1,
+                  'range': None, 'theta_range': None,
+                  'dist':None, 'theta_dist':None, 'origin':None,
+                  'keepxml':False, 'print_sdpb':False, 'profile':False, 'envelope':False,
+                  'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
+                  'max_bisections': None, 'sig_spacing': None, 'eps_spacing': None,
+                  'theta_spacing': None, 'side': "exterior",
+                  'file':None,
+                  'mem':8, 'ndays':1, 'threads':4, 'queue':'pi_poland'} # This last option is cluster-dependent
 
     for key in sdpb_params.keys():
         if args[key] is not None:

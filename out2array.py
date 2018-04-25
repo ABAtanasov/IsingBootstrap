@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Otherwise we read from the file that is fed into the program
     else:
         if bisect:
-            get_boundary()
+            read_bisections(sys.stdin.readlines(), points)
         else:
             read_lines(sys.stdin.readlines(), points)
 

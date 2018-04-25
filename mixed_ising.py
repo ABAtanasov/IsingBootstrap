@@ -221,7 +221,7 @@ if __name__ == "__main__":
                   'origin': None,
                   'keepxml': False, 'print_sdpb': False, 'profile': False, 'envelope': False,
                   'odd_scalar_gap': 3, 'even_scalar_gap': 3, 'spin_2_gap': None,
-                  'max_bisections': None,
+                  'max_bisections': None, 'side': "exterior",
                   'sig_spacing': None, 'eps_spacing': None, 'theta_spacing': None,
                   'out_file': False, 'in_file': None}
 
@@ -277,7 +277,9 @@ if __name__ == "__main__":
             spacing = [job_params['sig_spacing'], job_params['eps_spacing'], job_params['theta_spacing']]
         else:
             spacing = [job_params['sig_spacing'], job_params['eps_spacing']]
-        bis.bisect_loop(check, points, spacing=spacing, max_bisections=job_params['max_bisections'], f=f_out)
+        bis.bisect_loop(check, points,
+                        spacing=spacing, max_bisections=job_params['max_bisections'],
+                        f=f_out, side=job_params['side'])
     elif len(points[0]) == 2:
         if envelope:
             env.envelope_loop2D(check, points, f=f_out)
