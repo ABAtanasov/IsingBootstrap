@@ -26,6 +26,7 @@ scratchpath = os.path.join(mainpath, "scratch")
 
 sdpb = "./sdpb"
 sdpbparams = ["--findPrimalFeasible",
+              "--maxRuntime=150000",
               "--findDualFeasible",
               "--noFinalCheckpoint",
               "--dualErrorThreshold","1e-10",
