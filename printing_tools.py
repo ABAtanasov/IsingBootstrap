@@ -77,9 +77,6 @@ def print_point(deltas, out, name, durations, profile=True, f=None):
                     make_decimal(dual), make_decimal(primal))
 
     print_out(message, f=f)
-    if durations[1] < 60.0:
-        print_err("SDPB did the weird thing:", f=f)
-        print_out(out, f=f)
     write_update(f)
 
     return excluded
