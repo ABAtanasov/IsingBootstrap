@@ -1,4 +1,10 @@
-# Imports a job
+# --------------------------------------------------------
+# submit.py
+#
+# This is the module for submitting jobs to a cluster
+# Written for the Yale grace HPC cluster using SLURM
+# For other HPC clusters, write_jobfile must be modified
+# --------------------------------------------------------
 
 from __future__ import absolute_import
 
@@ -91,6 +97,9 @@ def submit_job(job_params, sdpb_params):
 # --------------------------------------------------------
 # This writes the entire submit .sh file
 # and returns a link to that file inside bash_scripts/
+#
+# WARNING: Written for the slurm job scheduler
+# This code would need to support other schedulers
 # --------------------------------------------------------
 def write_jobfile(cmd, jobname, paths,
                   nodes=10, threads=1, gpus=0, mem=8, ndays=1, queue='day'):

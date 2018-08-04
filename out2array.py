@@ -2,7 +2,7 @@
 # out2array.py
 #
 # This module allows us to format the files output from mixed_ising
-# into a style that is easy to feed in to mathematica directly.
+# into a style that is easy to feed in to Mathematica directly.
 # -----------------------------------------------------------------
 
 import sys

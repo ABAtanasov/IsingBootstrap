@@ -1,3 +1,10 @@
+# --------------------------------------------------------
+# parser_tools.py
+#
+# All of the argument parser setup is handled by the
+# method 'build_parser' of this module
+# --------------------------------------------------------
+
 import argparse
 
 

@@ -1,4 +1,17 @@
-
+# -----------------------------------------------------------------
+# bisection_method.py
+#
+# Implementing the bisection method
+# This is the primary method used to generate the data in our paper
+#
+# Given a set of points and a direction in which to bisect,
+# for each point, we move in that direction until something is either
+# not excluded (if we're coming from the default exterior side)
+# or excluded (if we're coming from the interior side)
+#
+# After that, we continue bisecting around this point for some
+# number of rounds, in order to precisely resolve the boundary
+# -----------------------------------------------------------------
 
 # Performs a round of bisection for a given point
 def bisect(check, point, spacing, num_bisections=0, max_bisections=5, f=None, side="exterior"):

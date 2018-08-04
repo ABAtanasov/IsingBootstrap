@@ -1,9 +1,13 @@
 # -----------------------------------------------------------------
 # envelope_method.py
 #
-# Implementing the envelope method discussed previously with D. Poland and A. Hillman
-# to significantly decrease the number of points that must be checked in future theta scans
+# Implementing the envelope method
+# This takes an input dict of points with a base (1 or 2)-tuple and
+# an array of (2 or 3)-tuples with that base tuple as their first component
 #
+# For each base point, we `erode away` this array of possible points
+# both from the highest value down and from the lowest value up
+# by excluding points using sdpb until somethnig is not excluded
 # -----------------------------------------------------------------
 
 from point_generator import array2dict2D, array2dict3D

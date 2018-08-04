@@ -1,6 +1,8 @@
 # -----------------------------------------------------------------
 # mixed_ising.py
 #
+# (Adopted from T. Ohtsuki's cboot example of the same name)
+#
 # This module uses sage to build the conformal block tables to be
 # fed into sdpb, as well as all other relevant sdpb parameters
 #
@@ -8,6 +10,10 @@
 # or constructs the set of points to loop over by using
 # point_generator.py
 #
+# Further depending on the params, this loop will either be run
+# directly on the points fed in, or a more complicated method such
+# as evelope or bisection will be run
+# See 'envelope_method.py' and 'bisection_method.py' respectively
 # -----------------------------------------------------------------
 
 import sage.cboot as cb
@@ -165,32 +171,41 @@ def make_SDP(deltas):
     return context.sumrule_to_SDP(norm, obj, pvms)
 
 
-def check(deltas, f=None):
+def check(deltas, f_out=None):
+    # Use cboot to construct sdpb input data:
     start = time.time()
     prob = make_SDP(deltas)
     end = time.time()
     cboot_duration = end - start
 
+    # Write sdpb data to a .xml file in scratch:
     xmlfile = os.path.join(scratchpath, name + ".xml")
     prob.write(xmlfile)
     sdpbargs = [sdpb, "-s", xmlfile] + sdpbparams
 
+    # Run sdpb as a subprocess using Popen,
+    # saving the sdpb output and error messages into 'out' and 'err'
     start = time.time()
     out, err = Popen(sdpbargs, stdout=PIPE, stderr=PIPE).communicate()
     end = time.time()
     sdpb_duration = end - start
 
+    # By default, we remove the .xml afterwards:
     if not keepxml:
         os.remove(xmlfile)
+    # Optionally, we print the whole sdpb output to the out file:
     if print_sdpb:
-        print_out(out, f=f)
+        print_out(out, f_out=f_out)
+    # If an sdpb error is encountered, print it for the user to see in the out file:
     if err:
-        print_err("An error occurred: ", err, f=f)
+        print_err("An error occurred: ", err, f_out=f_out)
         os.system("rm scratch/{}.ck".format(name))
         return False
 
     durations = (cboot_duration, sdpb_duration)
-    excluded = print_point(deltas, out, name, durations, profile, f=f)
+
+    # Print all the data of the run (depending on various parameters) to the out file:
+    excluded = print_point(deltas, out, name, durations, profile, f_out=f_out)
     return excluded
 
 if __name__ == "__main__":
@@ -285,13 +300,13 @@ if __name__ == "__main__":
             env.envelope_loop2D(check, points, f=f_out)
         else:
             for point in points:
-                check((point[0], point[1]), f=f_out)
+                check((point[0], point[1]), f_out=f_out)
     elif len(points[0]) == 3:
         if envelope:
             env.envelope_loop3D(check, points, f=f_out)
         else:
             for point in points:
-                check((point[0], point[1], point[2]), f=f_out)
+                check((point[0], point[1], point[2]), f_out=f_out)
     else:
         raise NotImplementedError('Inputs of more than than three CFT data are not yet implemented')
 
@@ -299,4 +314,4 @@ if __name__ == "__main__":
     if f_out is not None:
         f_out.close()
 
-    # make a 'clean' method at the end, to remove possibly lurking .ck files
+    # TODO: make a 'clean' method at the end, to remove possible lurking .ck files

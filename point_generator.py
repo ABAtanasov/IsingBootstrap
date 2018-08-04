@@ -1,7 +1,10 @@
-# -----------------------------------------------------------------
+# --------------------------------------------------------
 # point_generator.py
-# 
-# -----------------------------------------------------------------
+#
+# This script generates and manipulates the arrays of
+# points to be looped over using various methods
+# (e.g. enveleope, bisection) and fed into sdpb
+# --------------------------------------------------------
 
 import numpy as np
 from printing_tools import *
@@ -20,8 +23,11 @@ def mkrange(a, b, resolution):
 
 
 # --------------------------------------------------------
-# Converts a (3D) array of points into a dict
-# of base points as keys and their theta-fibers as vals
+# Converts an array of 3D point values, interpretted as
+# tuples: (\Delta_\sigma, \Delta_\epsilon, \theta)
+# into a dict of the base tuples
+# (\Delta_\sigma, \Delta_\epsilon) as keys
+# and the theta values as vals
 # --------------------------------------------------------
 def array2dict3D(points):
     assert len(points) > 0 and len(points[0]) == 3
@@ -42,7 +48,12 @@ def array2dict3D(points):
 
     return base_points
 
-
+# --------------------------------------------------------
+# Converts an array of 2D point values, interpretted as
+# tuples: (\Delta_\sigma, \Delta_\epsilon)
+# into a dict of the sigma values as keys
+# and the epsilon values as vals
+# --------------------------------------------------------
 def array2dict2D(points):
     assert len(points) > 0 and len(points[0]) == 2
     base_points = dict()
@@ -64,14 +75,14 @@ def array2dict2D(points):
 
 # --------------------------------------------------------
 # Given an in_file, prints the params to an out_file
-# (or stdout by default), and returns the list of points
+# (or STDOUT by default), and returns the list of points
 # contained in that file
 # --------------------------------------------------------
 def generate_from_file(params=None, f_in=None, f_out=None):
 
     if f_out is not None and f_in is not None:
-        print_out("Using {}".format(params), f=f_out)
-        print_out("from file {}".format(f_in.name), f=f_out)
+        print_out("Using {}".format(params), f_out=f_out)
+        print_out("from file {}".format(f_in.name), f_out=f_out)
 
     number_data = re.compile("-?[\d]+.[\d]*")
     points = []
@@ -89,7 +100,8 @@ def generate_from_file(params=None, f_in=None, f_out=None):
 # If f_in is specified, generates the points from that
 # in_file
 #
-# Otherwise, uses params to construct the correct loop
+# Otherwise, uses params to construct the correct array
+# of points
 # --------------------------------------------------------
 def generate_points(params, f_in=None, f_out=None):
 
@@ -127,14 +139,14 @@ def generate_points(params, f_in=None, f_out=None):
         theta_max = theta0 + params['theta_dist']
     theta_res = params['theta_res']
 
-    print_out("Using {}".format(params), f=f_out)
+    print_out("Using {}".format(params), f_out=f_out)
     print_out("with resolutions = ({}, {}), ".format(sig_res, eps_res) \
-          + "Delta window = (({}, {}), ({}, {})), ".format(
-        sig_min, sig_max, eps_min, eps_max), f=f_out)
+              + "Delta window = (({}, {}), ({}, {})), ".format(
+        sig_min, sig_max, eps_min, eps_max), f_out=f_out)
 
     if use_theta:
         print_out("use_theta window = ({}, {}), with resolution {}".format(
-            theta_min, theta_max, theta_res), f=f_out)
+            theta_min, theta_max, theta_res), f_out=f_out)
 
     sigmas = mkrange(sig_min, sig_max, sig_res)
     epsilons = mkrange(eps_min, eps_max, eps_res)
@@ -160,7 +172,7 @@ def generate_points(params, f_in=None, f_out=None):
 # corresponding to the name of the job
 #
 # If multiple batches are specified, this divides the
-# points into equal batches to be written to seperate
+# points into equal batches to be written to separate
 # files, one for each job that will be called, and
 # labelled in the form:
 #

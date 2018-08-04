@@ -4,4 +4,13 @@ This undergraduate research project studies 3D conformal field theories (CFTs) t
 
 We expand on the earlier work of D. Poland, D. Simmons-Duffin et al., making use of mixed correlator constraints, as well as a "theta scan" method to examine the possible 3-pt coefficient ratios of a given theory. 
 
-This project makes use of T. Ohstuki's cboot module for sage to build the relevant conformal blocks, and D. Simmons-Duffin's sdpb to employ the semidefinite programming for determining the feasibility of a given set of correlators satisfying the boostrap constraints. 
+This project makes use of T. Ohstuki's `cboot` module for sage to build the relevant conformal blocks, and D. Simmons-Duffin's `sdpb` to employ the semidefinite programming for determining the feasibility of a given set of correlators satisfying the bootstrap constraints. 
+
+**_Installation requirements:_**
+* The most recent version of[SDPB](https://github.com/davidsd/sdpb)
+installed, with `.sdpb` placed
+in the main directory of this project, together with all the
+requisite installations for `sdpb` to run successfully
+* Version 6.8-7.0 of[SageMath](http://www.sagemath.org/)installed
+* [`cboot`](https://github.com/tohtsky/cboot) installed in the
+ appropriate Sage module directory
