@@ -2,7 +2,7 @@
 
 *Code authors: Alex Atanasov (alex.atanasov@yale.edu) and Aaron Hillman (aaron.hillman@yale.edu)* 
 
-*Supervised g David Poland (david.poland@yale.edu)*
+*Supervised by David Poland (david.poland@yale.edu)*
 
 Package used for obtaining the results in [1807.05702](https://arxiv.org/abs/1807.05702).
 
