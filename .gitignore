@@ -11,4 +11,3 @@ test*
 *.DS_Store
 *.ipynb
 *.gitignore
-scratch/
