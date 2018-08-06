@@ -1,4 +1,4 @@
-# Studying the space of 3D Ising-like CFTs using the conformal bootstrap
+# Studying the space of 3D CFTs with a Z_2 Symmetry
 
 *Code authors: Alex Atanasov (alex.atanasov@yale.edu) and Aaron Hillman (aaron.hillman@yale.edu)* 
 
@@ -6,7 +6,7 @@
 
 Package used for obtaining the results in [1807.05702](https://arxiv.org/abs/1807.05702).
 
-This undergraduate research project studies 3D conformal field theories (CFTs) that live in the same "space of theories" as the 3D Ising model's CFT. Specifically, we study theories with two relevant scalars, one being Z_2 even (\epsilon) and the other being Z_2 odd (\sigma). We employ the crossing symmetry constraints on various correlators associated with a given candidate CFT to rule out the space of possible scaling dimensions for these two fields. 
+This undergraduate research project studies 3D conformal field theories (CFTs) with a parity symmetry. Specifically, we used this package initially for studying theories with two relevant scalars, one being parity even (\epsilon) and the other being parity odd (\sigma), giving theories with the same operator structure as the 3D Ising model. After this, we lowered the gap assumptions on the next lowest-lying parity odd scalar to make the operator relevant, and used this to constrain the scaling dimensions of the supersymmetric 3D Ising model. In both cases, we applied the usual crossing symmetry constraints on the four point functions associated with a given candidate CFT to rule out the space of possible scaling dimensions for the theories.
 
 We expand on the earlier work of D. Poland, D. Simmons-Duffin et al., making use of mixed correlator constraints, as well as a "theta scan" method to examine the possible 3-pt coefficient ratios of a given theory. 
 
